@@ -1,0 +1,103 @@
+<!-- SVG Vector Mockup of Kanban Board for Featured Post -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 420" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="50%" stop-color="#161f38" />
+      <stop offset="100%" stop-color="#1e1b4b" />
+    </linearGradient>
+    <linearGradient id="purple-btn" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#4f46e5" />
+    </linearGradient>
+    <linearGradient id="cyan-accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06b6d4" />
+      <stop offset="100%" stop-color="#3b82f6" />
+    </linearGradient>
+    <filter id="card-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.4" />
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="720" height="420" rx="16" fill="url(#bg-grad)" />
+  <rect width="718" height="418" x="1" y="1" rx="15" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" />
+
+  <!-- App Header inside Mockup -->
+  <rect x="24" y="24" width="672" height="48" rx="10" fill="#1e293b" fill-opacity="0.7" stroke="rgba(255,255,255,0.06)" />
+  <!-- Logo dot & text -->
+  <circle cx="50" cy="48" r="8" fill="#6366f1" />
+  <text x="68" y="53" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="14" font-weight="700">DevKanban</text>
+  <text x="160" y="52" fill="#64748b" font-family="system-ui, sans-serif" font-size="12">Sprint 24 • Proyecto DevBlog</text>
+
+  <!-- Filter & Add Task Button -->
+  <rect x="576" y="34" width="104" height="28" rx="6" fill="url(#purple-btn)" />
+  <text x="628" y="52" fill="#ffffff" font-family="system-ui, sans-serif" font-size="12" font-weight="600" text-anchor="middle">+ Nueva tarea</text>
+
+  <!-- Kanban Column 1: Por hacer -->
+  <rect x="24" y="90" width="210" height="305" rx="12" fill="#111827" fill-opacity="0.8" stroke="rgba(255,255,255,0.06)" />
+  <rect x="36" y="104" width="8" height="8" rx="2" fill="#94a3b8" />
+  <text x="52" y="112" fill="#f1f5f9" font-family="system-ui, sans-serif" font-size="13" font-weight="600">Por hacer</text>
+  <rect x="194" y="102" width="24" height="18" rx="9" fill="#1e293b" />
+  <text x="206" y="115" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11" text-anchor="middle">3</text>
+
+  <!-- Card 1.1 -->
+  <rect x="34" y="130" width="190" height="75" rx="8" fill="#1e293b" filter="url(#card-shadow)" stroke="rgba(255,255,255,0.05)" />
+  <rect x="44" y="140" width="45" height="14" rx="4" fill="#312e81" />
+  <text x="66" y="150" fill="#a5b4fc" font-family="system-ui, sans-serif" font-size="9" font-weight="600" text-anchor="middle">DESIGN</text>
+  <text x="44" y="172" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="12" font-weight="500">Diseñar UI del modal</text>
+  <text x="44" y="193" fill="#64748b" font-family="system-ui, sans-serif" font-size="10">Estilos Figma y tokens</text>
+
+  <!-- Card 1.2 -->
+  <rect x="34" y="215" width="190" height="75" rx="8" fill="#1e293b" filter="url(#card-shadow)" stroke="rgba(255,255,255,0.05)" />
+  <rect x="44" y="225" width="40" height="14" rx="4" fill="#1e3a5f" />
+  <text x="64" y="235" fill="#60a5fa" font-family="system-ui, sans-serif" font-size="9" font-weight="600" text-anchor="middle">DOCS</text>
+  <text x="44" y="257" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="12" font-weight="500">Documentar API</text>
+  <text x="44" y="278" fill="#64748b" font-family="system-ui, sans-serif" font-size="10">Endpoints y esquemas</text>
+
+
+  <!-- Kanban Column 2: En progreso -->
+  <rect x="255" y="90" width="210" height="305" rx="12" fill="#111827" fill-opacity="0.8" stroke="rgba(255,255,255,0.06)" />
+  <rect x="267" y="104" width="8" height="8" rx="2" fill="#f59e0b" />
+  <text x="283" y="112" fill="#f1f5f9" font-family="system-ui, sans-serif" font-size="13" font-weight="600">En progreso</text>
+  <rect x="425" y="102" width="24" height="18" rx="9" fill="#1e293b" />
+  <text x="437" y="115" fill="#f59e0b" font-family="system-ui, sans-serif" font-size="11" text-anchor="middle">2</text>
+
+  <!-- Card 2.1 (Active Drag/Drop) -->
+  <rect x="265" y="130" width="190" height="85" rx="8" fill="#243048" filter="url(#card-shadow)" stroke="#6366f1" stroke-width="1.5" />
+  <rect x="275" y="140" width="45" height="14" rx="4" fill="#4338ca" />
+  <text x="297" y="150" fill="#c7d2fe" font-family="system-ui, sans-serif" font-size="9" font-weight="600" text-anchor="middle">REACT</text>
+  <text x="275" y="172" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="12" font-weight="600">Drag & Drop hooks</text>
+  <text x="275" y="192" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="10">Integración @dnd-kit/core</text>
+  <circle cx="435" cy="195" r="8" fill="#6366f1" />
+  <text x="435" y="198" fill="#fff" font-size="8" text-anchor="middle">EK</text>
+
+  <!-- Card 2.2 -->
+  <rect x="265" y="225" width="190" height="75" rx="8" fill="#1e293b" filter="url(#card-shadow)" stroke="rgba(255,255,255,0.05)" />
+  <rect x="275" y="235" width="42" height="14" rx="4" fill="#065f46" />
+  <text x="296" y="245" fill="#6ee7b7" font-family="system-ui, sans-serif" font-size="9" font-weight="600" text-anchor="middle">TESTS</text>
+  <text x="275" y="267" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="12" font-weight="500">Pruebas unitarias</text>
+  <text x="275" y="288" fill="#64748b" font-family="system-ui, sans-serif" font-size="10">Jest & Testing Library</text>
+
+
+  <!-- Kanban Column 3: Hecho -->
+  <rect x="486" y="90" width="210" height="305" rx="12" fill="#111827" fill-opacity="0.8" stroke="rgba(255,255,255,0.06)" />
+  <rect x="498" y="104" width="8" height="8" rx="2" fill="#10b981" />
+  <text x="514" y="112" fill="#f1f5f9" font-family="system-ui, sans-serif" font-size="13" font-weight="600">Completado</text>
+  <rect x="656" y="102" width="24" height="18" rx="9" fill="#1e293b" />
+  <text x="668" y="115" fill="#10b981" font-family="system-ui, sans-serif" font-size="11" text-anchor="middle">4</text>
+
+  <!-- Card 3.1 -->
+  <rect x="496" y="130" width="190" height="75" rx="8" fill="#1e293b" filter="url(#card-shadow)" stroke="rgba(255,255,255,0.05)" opacity="0.85" />
+  <rect x="506" y="140" width="56" height="14" rx="4" fill="#14532d" />
+  <text x="534" y="150" fill="#86efac" font-family="system-ui, sans-serif" font-size="9" font-weight="600" text-anchor="middle">DATABASE</text>
+  <text x="506" y="172" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="12" font-weight="500">Modelo de datos SQL</text>
+  <text x="506" y="193" fill="#64748b" font-family="system-ui, sans-serif" font-size="10">Tablas y relaciones</text>
+
+  <!-- Card 3.2 -->
+  <rect x="496" y="215" width="190" height="75" rx="8" fill="#1e293b" filter="url(#card-shadow)" stroke="rgba(255,255,255,0.05)" opacity="0.85" />
+  <rect x="506" y="225" width="48" height="14" rx="4" fill="#312e81" />
+  <text x="530" y="235" fill="#a5b4fc" font-family="system-ui, sans-serif" font-size="9" font-weight="600" text-anchor="middle">LAYOUT</text>
+  <text x="506" y="257" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="12" font-weight="500">Configurar Tailwind</text>
+  <text x="506" y="278" fill="#64748b" font-family="system-ui, sans-serif" font-size="10">Paleta de colores oscura</text>
+</svg>

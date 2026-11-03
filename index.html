@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DevBlog — Aprender. Construir. Compartir.</title>
+  <meta name="description" content="Blog sobre desarrollo web moderno, React, UI/UX, TypeScript, CSS y tecnología.">
+  <link rel="icon" type="image/svg+xml" href="assets/images/logo.svg">
+  
+  <!-- Estilos del Sistema de Diseño -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/blog.css">
+</head>
+<body>
+
+  <!-- ==========================================================================
+       HEADER / NAVEGACIÓN PRINCIPAL
+       ========================================================================== -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <!-- Logo de DevBlog -->
+      <a href="index.html" class="brand-logo">
+        <img src="assets/images/logo.svg" alt="DevBlog Logo" class="brand-icon">
+        <span class="brand-name">Dev<span class="brand-dot">Blog</span></span>
+      </a>
+
+      <!-- Barra de búsqueda central -->
+      <div class="header-search">
+        <div class="search-input-wrapper">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="global-search" class="search-input" placeholder="Buscar artículos, tecnologías, conceptos...">
+        </div>
+      </div>
+
+      <!-- Navegación & Acciones -->
+      <nav class="header-nav">
+        <a href="index.html" class="nav-link active">Inicio</a>
+        <a href="#articulos" class="nav-link">Artículos</a>
+        <a href="#sobre-mi" class="nav-link">Sobre mí</a>
+      </nav>
+
+      <div class="nav-cta">
+        <a href="admin.html" class="btn btn-secondary btn-sm" title="Panel de Administración">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+          <span>Gestor</span>
+        </a>
+        <button class="btn btn-primary btn-sm" onclick="openModal('auth-login-modal')">
+          Iniciar sesión
+        </button>
+      </div>
+
+      <!-- Botón móvil -->
+      <button class="mobile-menu-btn" aria-label="Abrir menú">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Menú desplegable para móviles -->
+    <div class="mobile-drawer">
+      <div class="search-input-wrapper" style="margin-bottom: 0.75rem;">
+        <input type="text" class="search-input" placeholder="Buscar...">
+      </div>
+      <a href="index.html" class="nav-link active">Inicio</a>
+      <a href="#articulos" class="nav-link">Artículos</a>
+      <a href="#sobre-mi" class="nav-link">Sobre mí</a>
+      <a href="admin.html" class="nav-link">Panel Gestor</a>
+      <button class="btn btn-primary" onclick="openModal('auth-login-modal')" style="width: 100%; margin-top: 0.5rem;">
+        Iniciar sesión
+      </button>
+    </div>
+  </header>
+
+  <!-- ==========================================================================
+       HERO BANNER
+       ========================================================================== -->
+  <section class="hero-section">
+    <div class="container">
+      <div class="hero-content">
+        <h1 class="hero-title">Aprender. Construir. Compartir.</h1>
+        <p class="hero-description">
+          Un espacio donde documento mi viaje como desarrollador, compartiendo tutoriales, aprendizajes y experiencias reales sobre desarrollo web, arquitectura frontend y diseño de interfaces.
+        </p>
+
+        <!-- Filtros rápidos por tecnología -->
+        <div class="hero-topics">
+          <span class="hero-topics-label">Temas:</span>
+          <button class="badge badge-tag hero-topic-btn" data-topic="React" onclick="filterByTopic('React')">React</button>
+          <button class="badge badge-tag hero-topic-btn" data-topic="UI/UX" onclick="filterByTopic('UI/UX')">UI / UX</button>
+          <button class="badge badge-tag hero-topic-btn" data-topic="Frontend" onclick="filterByTopic('Frontend')">Frontend</button>
+          <button class="badge badge-tag hero-topic-btn" data-topic="TypeScript" onclick="filterByTopic('TypeScript')">TypeScript</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       CONTENIDO PRINCIPAL: FEED Y SIDEBAR (2 COLUMNAS)
+       ========================================================================== -->
+  <main class="container">
+    <div class="blog-layout">
+      <!-- Columna Principal de Artículos -->
+      <section class="blog-main" id="articulos">
+        <!-- Contenedor del Artículo Destacado (Inyectado por JS) -->
+        <div id="featured-container"></div>
+
+        <!-- Encabezado de la lista -->
+        <div class="section-header-row">
+          <h2 class="section-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="8" y1="6" x2="21" y2="6"></line>
+              <line x1="8" y1="12" x2="21" y2="12"></line>
+              <line x1="8" y1="18" x2="21" y2="18"></line>
+              <line x1="3" y1="6" x2="3.01" y2="6"></line>
+              <line x1="3" y1="12" x2="3.01" y2="12"></line>
+              <line x1="3" y1="18" x2="3.01" y2="18"></line>
+            </svg>
+            Publicaciones Recientes
+          </h2>
+        </div>
+
+        <!-- Grilla de Artículos (Inyectado por JS desde BlogStore) -->
+        <div class="posts-grid" id="posts-container">
+          <!-- Renderizado dinámico -->
+        </div>
+
+        <!-- Botón para cargar más -->
+        <div class="load-more-wrapper">
+          <button class="btn btn-secondary" id="btn-load-more">
+            Cargar más publicaciones
+          </button>
+        </div>
+      </section>
+
+      <!-- Sidebar Lateral -->
+      <aside class="sidebar">
+        <!-- Tarjeta de Perfil / Sobre el Autor -->
+        <div class="card author-card" id="sobre-mi">
+          <div class="author-avatar-wrapper">
+            <img src="assets/images/avatar.svg" alt="Avatar de Erick" class="author-avatar">
+          </div>
+          <h3 class="author-name">Erick</h3>
+          <span class="author-role">Frontend & UI Developer</span>
+          <p class="author-bio">
+            Desarrollador apasionado por crear experiencias web modernas, limpias y funcionales. Comparto lo que aprendo en cada proyecto.
+          </p>
+          <div class="author-socials">
+            <a href="https://github.com/Z3K-Erick" target="_blank" rel="noopener" class="social-link" title="GitHub">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+              </svg>
+            </a>
+            <a href="https://twitter.com" target="_blank" rel="noopener" class="social-link" title="Twitter / X">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+              </svg>
+            </a>
+            <a href="https://linkedin.com" target="_blank" rel="noopener" class="social-link" title="LinkedIn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+                <rect x="2" y="9" width="4" height="12"></rect>
+                <circle cx="4" cy="4" r="2"></circle>
+              </svg>
+            </a>
+          </div>
+        </div>
+
+        <!-- Tarjeta de Temas Populares -->
+        <div class="card">
+          <h3 class="section-title" style="font-size: 1rem; margin-bottom: 1rem;">
+            Temas Populares
+          </h3>
+          <div class="tag-cloud" id="popular-tags-cloud">
+            <!-- Inyectado por JS -->
+          </div>
+        </div>
+
+        <!-- Tarjeta de Posts Más Leídos -->
+        <div class="card">
+          <h3 class="section-title" style="font-size: 1rem; margin-bottom: 1rem;">
+            Lo Más Destacado
+          </h3>
+          <div class="popular-list" id="popular-posts-list">
+            <!-- Inyectado por JS -->
+          </div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- ==========================================================================
+       MODAL: INICIAR SESIÓN (Top right en mockup)
+       ========================================================================== -->
+  <div class="modal-overlay" id="auth-login-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+          Iniciar Sesión
+        </h3>
+        <button class="modal-close" data-close-modal aria-label="Cerrar">✕</button>
+      </div>
+      <form onsubmit="event.preventDefault(); showToast('Sesión iniciada como Erick', 'success'); closeModal('auth-login-modal');">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="login-email">Correo Electrónico</label>
+            <input type="email" id="login-email" class="form-input" placeholder="tu@email.com" value="erick@devblog.io" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="login-pass">Contraseña</label>
+            <input type="password" id="login-pass" class="form-input" placeholder="••••••••" value="password123" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" data-close-modal>Cancelar</button>
+          <button type="submit" class="btn btn-primary">Ingresar al Blog</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       FOOTER
+       ========================================================================== -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <img src="assets/images/logo.svg" alt="DevBlog Logo" width="24" height="24">
+          <span>DevBlog</span>
+        </div>
+        <div class="footer-links">
+          <a href="index.html">Inicio</a>
+          <a href="admin.html">Panel Gestor</a>
+          <a href="editor.html">Nueva Publicación</a>
+          <a href="https://github.com/Z3K-Erick/DevBlog" target="_blank" rel="noopener">GitHub</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2024 DevBlog. Código abierto para la comunidad de desarrolladores.</span>
+        <span>Hecho con HTML5, CSS3 y JavaScript moderno</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/store.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
