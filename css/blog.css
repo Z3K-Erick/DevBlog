@@ -219,12 +219,20 @@
 
 /* Variante destacada (arriba del feed) */
 .post-card--featured .post-card-media {
-  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 20px;
   background: radial-gradient(circle at top left, rgba(99, 102, 241, 0.16), transparent 65%), #13182b;
   border-bottom: 1px solid var(--border);
 }
 
 .post-card--featured .post-card-media img {
+  width: auto;
+  max-width: 340px;
+  max-height: 190px;
+  height: auto;
+  object-fit: contain;
   border-radius: var(--radius);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -570,10 +578,17 @@
 }
 
 .prose-figure-body {
+  display: flex;
+  justify-content: center;
   padding: 16px;
 }
 
 .prose-figure-body img {
+  width: auto;
+  max-width: 420px;
+  max-height: 240px;
+  height: auto;
+  object-fit: contain;
   border-radius: var(--radius);
 }
 
