@@ -66,8 +66,8 @@
         </div>`;
     } else {
       els.feed.innerHTML = shown
-        .map((post, i) =>
-          postCard(post, { variant: i === 0 && isDefaultView() ? 'featured' : 'row' })
+        .map((post) =>
+          postCard(post, { variant: post.layout === 'top' ? 'featured' : 'row' })
         )
         .join('');
     }

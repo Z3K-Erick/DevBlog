@@ -235,14 +235,18 @@
    * ------------------------------------------------------------- */
   function postCard(post, { variant = 'row', admin = false } = {}) {
     const url = `post.html?id=${encodeURIComponent(post.id)}`;
+    // Si la imagen es panorámica muy ancha (o post.layout === 'top'), va arriba;
+    // en caso contrario (como thumb-design.svg o capturas normales) va a un costado.
+    const autoVariant =
+      variant === 'featured' || post.layout === 'top' ? 'featured' : 'row';
     const media = post.image
-      ? `<a class="post-card-media" href="${url}" tabindex="-1" aria-hidden="true"><img src="${esc(post.image)}" alt="" loading="lazy"></a>`
+      ? `<a class="post-card-media" href="${url}" tabindex="-1" aria-hidden="true"><img src="${esc(post.image)}" alt="" loading="lazy" onload="if(!this.closest('.post-card--editing')&&this.naturalWidth&&this.naturalHeight){this.closest('.post-card').classList.toggle('post-card--featured',this.naturalWidth/this.naturalHeight>=1.9);this.closest('.post-card').classList.toggle('post-card--row',this.naturalWidth/this.naturalHeight<1.9);}"></a>`
       : '';
 
     const kindLabel = (post.kind || 'Proyecto').toUpperCase();
     const dateLabel = Utils.formatDate(post.date).toUpperCase();
 
-    if (variant === 'featured' && !admin) {
+    if (autoVariant === 'featured' && !admin) {
       return `
         <article class="post-card post-card--featured" data-id="${esc(post.id)}">
           ${media}
