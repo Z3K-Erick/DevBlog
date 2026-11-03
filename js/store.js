@@ -9,6 +9,7 @@
   const SITE_KEY = 'devblog:siteconfig:v1';
   const AUTH_KEY = 'devblog:admin:session';
   const DEFAULT_AVATAR = 'assets/images/avatar.svg';
+  const API_BASE_URL = window.DEVBLOG_API_URL || 'http://127.0.0.1:8001';
 
   const DEFAULT_SITE_CONFIG = {
     profile: {
@@ -202,7 +203,62 @@
 
   const byDateDesc = (a, b) => new Date(b.date) - new Date(a.date);
 
+  function notifyStoreUpdate() {
+    window.dispatchEvent(new Event('storage'));
+    window.dispatchEvent(new CustomEvent('devblog:synced'));
+  }
+
+  async function apiRequest(path, options = {}) {
+    try {
+      const res = await fetch(`${API_BASE_URL}${path}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CMS-Cliente': 'DevBlog-Web-CMS',
+          ...(options.headers || {}),
+        },
+        ...options,
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
+
+  async function syncFromApi() {
+    const [postsData, cfgData] = await Promise.all([
+      apiRequest('/proyectos'),
+      apiRequest('/configuracion'),
+    ]);
+    let changed = false;
+    if (Array.isArray(postsData)) {
+      write(postsData);
+      changed = true;
+    }
+    if (cfgData && typeof cfgData === 'object') {
+      const nextCfg = {
+        profile: { ...DEFAULT_SITE_CONFIG.profile, ...(cfgData.profile || {}) },
+        technologies: Array.isArray(cfgData.technologies)
+          ? cfgData.technologies
+          : [...DEFAULT_SITE_CONFIG.technologies],
+        projects: Array.isArray(cfgData.projects)
+          ? cfgData.projects
+          : clone(DEFAULT_SITE_CONFIG.projects),
+      };
+      localStorage.setItem(SITE_KEY, JSON.stringify(nextCfg));
+      if (cfgData.avatar && cfgData.avatar !== DEFAULT_AVATAR) {
+        localStorage.setItem(AVATAR_KEY, cfgData.avatar);
+      }
+      changed = true;
+    }
+    if (changed) notifyStoreUpdate();
+    return changed;
+  }
+
   const Store = {
+    apiUrl: API_BASE_URL,
+    syncFromApi,
+
     all() {
       return read().map(enrich).sort(byDateDesc);
     },
@@ -231,7 +287,34 @@
       };
       const posts = read();
       posts.unshift(post);
-      return write(posts) ? enrich(post) : null;
+      const saved = write(posts) ? enrich(post) : null;
+
+      // Sincronización con la API REST (POST /proyectos)
+      apiRequest('/proyectos', {
+        method: 'POST',
+        headers: { 'Idempotency-Key': post.id },
+        body: JSON.stringify({
+          title: post.title,
+          content: post.content,
+          kind: post.kind,
+          layout: post.layout,
+          tags: post.tags,
+          image: post.image,
+          status: post.status,
+        }),
+      }).then((created) => {
+        if (created && created.id) {
+          const current = read();
+          const idx = current.findIndex((p) => p.id === post.id);
+          if (idx !== -1) {
+            current[idx] = { ...current[idx], id: created.id, date: created.date || current[idx].date };
+            write(current);
+            notifyStoreUpdate();
+          }
+        }
+      });
+
+      return saved;
     },
 
     update(id, patch) {
@@ -250,13 +333,37 @@
       next.updatedAt = new Date().toISOString();
 
       posts[index] = next;
-      return write(posts) ? enrich(next) : null;
+      const saved = write(posts) ? enrich(next) : null;
+
+      // Sincronización con la API REST (PUT /proyectos/{id_})
+      apiRequest(`/proyectos/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          title: next.title,
+          content: next.content,
+          kind: next.kind,
+          layout: next.layout,
+          tags: next.tags,
+          image: next.image,
+          status: next.status,
+        }),
+      });
+
+      return saved;
     },
 
     remove(id) {
       const posts = read();
       const next = posts.filter((p) => p.id !== id);
-      return next.length !== posts.length && write(next);
+      const removed = next.length !== posts.length && write(next);
+
+      if (removed) {
+        // Sincronización con la API REST (DELETE /proyectos/{id_})
+        apiRequest(`/proyectos/${encodeURIComponent(id)}`, {
+          method: 'DELETE',
+        });
+      }
+      return removed;
     },
 
     tagCounts(posts = this.published()) {
@@ -315,6 +422,17 @@
             patch.projects !== undefined ? patch.projects : current.projects,
         };
         localStorage.setItem(SITE_KEY, JSON.stringify(next));
+
+        // Sincronización con la API REST (PUT /configuracion)
+        apiRequest('/configuracion', {
+          method: 'PUT',
+          body: JSON.stringify({
+            profile: next.profile,
+            technologies: next.technologies,
+            projects: next.projects,
+          }),
+        });
+
         return next;
       } catch {
         return null;
@@ -334,12 +452,22 @@
       try {
         if (!dataUrl) localStorage.removeItem(AVATAR_KEY);
         else localStorage.setItem(AVATAR_KEY, dataUrl);
+
+        // Sincronización con la API REST (PUT /configuracion)
+        apiRequest('/configuracion', {
+          method: 'PUT',
+          body: JSON.stringify({ avatar: dataUrl || DEFAULT_AVATAR }),
+        });
+
         return true;
       } catch {
         return false;
       }
     },
   };
+
+  // Hidratar desde la API en segundo plano al iniciar la página
+  syncFromApi();
 
   /* ---------------------------------------------------------------
    * Auth — Validación estricta del único administrador

@@ -25,3 +25,47 @@ Maquetado web en **HTML5, CSS3 y JavaScript**, diseñado sobre una paleta oscura
 5. **Componentes Modales ([`js/ui.js`](file:///c:/Users/erick/OneDrive/Desktop/DevBlog/js/ui.js))**:
    - **Modal de Login (`Iniciar Sesión`):** se abre desde el botón invisible ubicado junto a la foto de perfil. Valida las credenciales del administrador único antes de permitir el acceso al Dashboard.
    - **Modal de Eliminación (`¿Eliminar publicación?`):** alerta flotante con confirmación en rojo (`Sí, eliminar`) o `Cancelar` antes de borrar cualquier post.
+
+---
+
+## ⚙️ API REST del Blog (`api_blog.py`) y Conexión con el CMS (`dashboard.html`)
+
+El proyecto incluye una **API REST en FastAPI + SQLite** que administra el ciclo de vida del contenido desde el panel de administración (`dashboard.html` actuando como CMS) y alimenta las lecturas del sitio estático (`index.html` y `post.html`).
+
+### 🚀 Cómo ejecutar todo el entorno
+
+1. Instalar las dependencias de Python:
+   ```bash
+   python -m pip install -r requirements.txt
+   ```
+2. Iniciar el servidor unificado (levanta la API en el puerto `8001` y el servidor web en el `8080`):
+   ```bash
+   python run.py
+   ```
+   *(O bien iniciar únicamente la API con `python -m uvicorn api_blog:app --port 8001 --reload`)*
+3. Accesos locales:
+   - **Blog público:** `http://127.0.0.1:8080/index.html`
+   - **CMS / Dashboard de Administración:** `http://127.0.0.1:8080/dashboard.html`
+   - **API REST del Blog:** `http://127.0.0.1:8001/proyectos`
+   - **Documentación interactiva (Swagger UI):** `http://127.0.0.1:8001/docs`
+
+### 📌 Endpoints principales (`http://127.0.0.1:8001`)
+
+| Método | Ruta | Descripción | Códigos HTTP |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/proyectos` (o `/publicaciones`) | Lista publicaciones con filtros opcionales (`?estado=`, `?kind=`, `?tag=`, `?q=`) y caché `ETag`. | `200`, `304` |
+| `POST` | `/proyectos` (o `/publicaciones`) | Crea una nueva publicación validada con Pydantic y soporte de `Idempotency-Key`. | `201`, `422` |
+| `GET` | `/proyectos/{id_}` | Obtiene el detalle completo de una publicación por su ID en la ruta. | `200`, `304`, `404` |
+| `PUT` | `/proyectos/{id_}` | Actualiza de forma síncrona e idempotente una publicación existente. | `200`, `404`, `422` |
+| `DELETE` | `/proyectos/{id_}` | Elimina físicamente una publicación (`200` la primera vez, `404` en llamadas repetidas). | `200`, `404` |
+| `GET` | `/proyectos/buscar` | Búsqueda mediante parámetros de consulta (`?q=`, `?kind=`, `?estado=`). | `200` |
+| `CRUD` | `/ideas` y `/ideas/{id_}` | Gestión CRUD completa de ideas en borrador dentro del CMS. | `200`, `201`, `404`, `422` |
+| `GET/PUT` | `/configuracion` (o `/perfil`) | Obtiene o reemplaza los datos del perfil del autor, tecnologías y sección *En construcción*. | `200`, `422` |
+| `GET` | `/exportar` | Exporta como JSON el contenido con estado `publicado` y la configuración del sitio. | `200` |
+
+### 🧪 Ejecutar las pruebas automatizadas
+
+```bash
+python -m pytest test_api_blog.py -v
+```
+

@@ -940,8 +940,10 @@
     renderMyPosts();
     renderTable();
     renderProfileTab();
+    if (UI.syncAvatars) UI.syncAvatars();
   }
 
+  window.addEventListener('devblog:synced', renderAll);
   renderAll();
   setTab(location.hash.slice(1) || 'mi-feed');
 })();
