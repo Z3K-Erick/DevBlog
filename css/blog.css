@@ -291,6 +291,55 @@
   gap: 12px;
 }
 
+.sidebar-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.sidebar-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.build-edit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.build-edit-row {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: start;
+  padding: 10px;
+  border-radius: var(--radius);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+}
+
+.build-icon-input {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+.build-edit-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
 .profile-avatar-circle {
   width: 44px;
   height: 44px;

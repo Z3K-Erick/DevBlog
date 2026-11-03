@@ -44,6 +44,13 @@
           </svg>
           <span>Gestor de Publicaciones</span>
         </button>
+
+        <button type="button" class="dash-nav-btn" data-tab="perfil">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 5-6 8-6s6.5 2 8 6"/>
+          </svg>
+          <span>Perfil y Sidebar</span>
+        </button>
       </nav>
 
       <div class="dash-sidebar-bottom">
@@ -99,6 +106,9 @@
           </button>
           <button type="button" class="dash-tab" role="tab" aria-selected="false" data-tab="gestor">
             Gestor de Publicaciones
+          </button>
+          <button type="button" class="dash-tab" role="tab" aria-selected="false" data-tab="perfil">
+            Perfil y Sidebar
           </button>
         </div>
 
@@ -228,6 +238,99 @@
                 <p>No hay publicaciones que coincidan con el filtro actual.</p>
               </div>
             </div>
+          </div>
+        </section>
+
+        <!-- ==================================================================
+             PESTAÑA 3: "PERFIL Y SIDEBAR" (EDITAR TARJETAS LATERALES)
+             ================================================================== -->
+        <section class="tab-panel" id="panel-perfil" aria-label="Perfil y Barra Lateral" hidden>
+          <div class="composer-card">
+            <div class="composer-head">
+              <div>
+                <h2 class="composer-title">1. Tarjeta de Perfil</h2>
+                <p class="composer-sub">Edita tu nombre, descripción, ubicación, foto y enlace de GitHub</p>
+              </div>
+            </div>
+            <form class="composer-body" id="dash-profile-form" novalidate>
+              <div style="display:flex;align-items:center;gap:14px;">
+                <div class="profile-avatar-circle" style="width:52px;height:52px;">
+                  <img src="assets/images/avatar.svg" alt="Foto de perfil" data-user-avatar>
+                </div>
+                <label class="btn btn-secondary btn-sm">
+                  📷 Subir nueva foto de perfil
+                  <input type="file" id="dash-avatar-file" accept="image/*" class="visually-hidden">
+                </label>
+              </div>
+
+              <div class="form-grid-2">
+                <div class="field">
+                  <label class="label" for="prof-name">Nombre</label>
+                  <input class="input" id="prof-name" name="name" required>
+                </div>
+                <div class="field">
+                  <label class="label" for="prof-role">Rol / Subtítulo en artículos</label>
+                  <input class="input" id="prof-role" name="role">
+                </div>
+              </div>
+
+              <div class="field">
+                <label class="label" for="prof-bio">Descripción corta</label>
+                <textarea class="input textarea" id="prof-bio" name="bio" rows="2" style="min-height:70px;"></textarea>
+              </div>
+
+              <div class="form-grid-2">
+                <div class="field">
+                  <label class="label" for="prof-location">Ubicación</label>
+                  <input class="input" id="prof-location" name="location" placeholder="México">
+                </div>
+                <div class="field">
+                  <label class="label" for="prof-github">Enlace de GitHub</label>
+                  <input class="input" id="prof-github" name="githubUrl" placeholder="https://github.com/Z3K-Erick">
+                </div>
+              </div>
+
+              <div class="composer-foot">
+                <span class="form-hint">Se refleja inmediatamente en la barra lateral del blog</span>
+                <button type="submit" class="btn btn-primary btn-sm">Guardar perfil</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="composer-card">
+            <div class="composer-head">
+              <div>
+                <h2 class="composer-title">2. Filtrar por tecnología</h2>
+                <p class="composer-sub">Agrega o quita las etiquetas que aparecen en el recuadro "Filtrar por tecnología"</p>
+              </div>
+            </div>
+            <form class="composer-body" id="dash-tech-form" novalidate>
+              <div class="field">
+                <label class="label">Tecnologías visibles</label>
+                <div id="dash-tech-tags"></div>
+              </div>
+              <div class="composer-foot">
+                <span class="form-hint">Escribe una tecnología y presiona Enter, o elimínala con ×</span>
+                <button type="submit" class="btn btn-primary btn-sm">Guardar tecnologías</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="composer-card">
+            <div class="composer-head">
+              <div>
+                <h2 class="composer-title">3. En construcción</h2>
+                <p class="composer-sub">Edita o agrega los proyectos que muestras en la tarjeta "En construcción"</p>
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm" id="dash-add-project">+ Agregar proyecto</button>
+            </div>
+            <form class="composer-body" id="dash-build-form" novalidate>
+              <div class="build-edit-list" id="dash-build-list"></div>
+              <div class="composer-foot">
+                <span class="form-hint">Puedes cambiar el icono (ej. &lt;/&gt;, ⚡, ▦), el nombre y la descripción</span>
+                <button type="submit" class="btn btn-primary btn-sm">Guardar En construcción</button>
+              </div>
+            </form>
           </div>
         </section>
       </main>

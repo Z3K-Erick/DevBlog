@@ -96,48 +96,14 @@
       <!-- Columna derecha: Barra lateral -->
       <aside class="sidebar" id="sobre-mi" aria-label="Información del autor y filtros">
 
-        <!-- Tarjeta de perfil del autor -->
-        <div class="card profile-card">
-          <div class="profile-avatar-circle">
-            <img src="assets/images/avatar.svg" alt="Foto de perfil de Erick">
-          </div>
-          <div class="profile-info">
-            <p class="profile-name">Erick</p>
-            <p class="profile-bio">Estudiante de ingeniería construyendo proyectos web.</p>
-          </div>
-          <span class="profile-loc">📍 México</span>
-          <a href="https://github.com/Z3K-Erick" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
-            </svg>
-            <span>GitHub</span>
-          </a>
-        </div>
+        <!-- Tarjeta de perfil del autor (dinámica y editable por el admin) -->
+        <div class="card profile-card" id="sidebar-profile-card"></div>
 
-        <!-- Filtrar por tecnología -->
-        <div class="card">
-          <div class="sidebar-head">
-            <h2 class="sidebar-title">Filtrar por tecnología</h2>
-          </div>
-          <div class="tech-filters" id="tech-filters"></div>
-        </div>
+        <!-- Filtrar por tecnología (dinámica y editable por el admin) -->
+        <div class="card" id="sidebar-tech-card"></div>
 
-        <!-- En construcción -->
-        <div class="card">
-          <div class="sidebar-head">
-            <h2 class="sidebar-title">En construcción</h2>
-            <span class="muted">↗</span>
-          </div>
-          <ul class="build-list">
-            <li class="build-item">
-              <span class="build-icon">&lt;/&gt;</span>
-              <div>
-                <span class="build-name">DevBlog</span>
-                <span class="build-desc">Maquetado + panel de administración</span>
-              </div>
-            </li>
-          </ul>
-        </div>
+        <!-- En construcción (dinámica y editable por el admin) -->
+        <div class="card" id="sidebar-build-card"></div>
 
         <p class="sidebar-note">
           Blog personal creado desde cero para documentar proyectos y prácticas.

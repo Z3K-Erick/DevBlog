@@ -31,6 +31,7 @@
   const { html, headings } = Markdown.render(post.content);
   const kindLabel = (post.kind || 'Proyecto').toUpperCase();
   const dateLabel = Utils.formatDate(post.date).toUpperCase();
+  const profile = Store.getSiteConfig().profile;
 
   root.innerHTML = `
     <a href="index.html" class="back-link">← Volver al feed</a>
@@ -44,10 +45,10 @@
           <h1 class="post-title">${esc(post.title)}</h1>
           ${post.excerpt ? `<p class="post-lead">${esc(post.excerpt)}</p>` : ''}
           <div class="post-author">
-            <img src="${esc(Store.getAvatar())}" alt="Erick" class="post-author-avatar" width="36" height="36" data-user-avatar>
+            <img src="${esc(Store.getAvatar())}" alt="${esc(profile.name)}" class="post-author-avatar" width="36" height="36" data-user-avatar>
             <div>
-              <span class="post-author-name">Erick</span>
-              <span class="post-author-role">Estudiante de Ingeniería · Dev</span>
+              <span class="post-author-name">${esc(profile.name)}</span>
+              <span class="post-author-role">${esc(profile.role)}</span>
             </div>
             <div class="chip-list post-author-tags">
               ${post.tags.map((t) => `<a class="tag ${tagClass(t)}" href="index.html?tag=${encodeURIComponent(t)}">${esc(t)}</a>`).join('')}

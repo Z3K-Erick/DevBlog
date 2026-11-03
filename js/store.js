@@ -6,8 +6,28 @@
 
   const STORAGE_KEY = 'devblog:posts:v4';
   const AVATAR_KEY = 'devblog:avatar:v1';
+  const SITE_KEY = 'devblog:siteconfig:v1';
   const AUTH_KEY = 'devblog:admin:session';
   const DEFAULT_AVATAR = 'assets/images/avatar.svg';
+
+  const DEFAULT_SITE_CONFIG = {
+    profile: {
+      name: 'Erick',
+      role: 'Estudiante de Ingeniería · Dev',
+      bio: 'Estudiante de ingeniería construyendo proyectos web.',
+      location: 'México',
+      githubUrl: 'https://github.com/Z3K-Erick',
+      githubLabel: 'GitHub',
+    },
+    technologies: ['React', 'UI/UX', 'Python', 'JavaScript', 'HTML/CSS', 'FastAPI'],
+    projects: [
+      {
+        icon: '</>',
+        name: 'DevBlog',
+        desc: 'Maquetado + panel de administración',
+      },
+    ],
+  };
 
   // Único administrador autorizado (comparación estricta)
   const ADMIN_ACCOUNT = {
@@ -236,15 +256,19 @@
     },
 
     tagCounts(posts = this.published()) {
-      const base = ['React', 'UI/UX', 'Python', 'JavaScript', 'HTML/CSS', 'FastAPI'];
+      const cfg = this.getSiteConfig();
+      const base = Array.isArray(cfg.technologies) ? cfg.technologies : DEFAULT_SITE_CONFIG.technologies;
       const map = new Map();
-      base.forEach((tag) => map.set(tag.toLowerCase(), { tag, count: 0 }));
+      base.forEach((tag) => {
+        const clean = String(tag).trim();
+        if (clean) map.set(clean.toLowerCase(), { tag: clean, count: 0 });
+      });
       posts.forEach((p) =>
         p.tags.forEach((tag) => {
           const key = tag.toLowerCase();
-          const entry = map.get(key) || { tag, count: 0 };
-          entry.count += 1;
-          map.set(key, entry);
+          if (map.has(key)) {
+            map.get(key).count += 1;
+          }
         })
       );
       return [...map.values()];
@@ -252,6 +276,45 @@
 
     categories(posts = this.all()) {
       return [...new Set(posts.map((p) => p.category))].sort((a, b) => a.localeCompare(b));
+    },
+
+    /* Configuración editable del perfil y barra lateral */
+    getSiteConfig() {
+      try {
+        const raw = localStorage.getItem(SITE_KEY);
+        if (!raw) return clone(DEFAULT_SITE_CONFIG);
+        const parsed = JSON.parse(raw);
+        return {
+          profile: { ...DEFAULT_SITE_CONFIG.profile, ...(parsed.profile || {}) },
+          technologies: Array.isArray(parsed.technologies)
+            ? parsed.technologies
+            : [...DEFAULT_SITE_CONFIG.technologies],
+          projects: Array.isArray(parsed.projects)
+            ? parsed.projects
+            : clone(DEFAULT_SITE_CONFIG.projects),
+        };
+      } catch {
+        return clone(DEFAULT_SITE_CONFIG);
+      }
+    },
+
+    saveSiteConfig(patch) {
+      try {
+        const current = this.getSiteConfig();
+        const next = {
+          profile: { ...current.profile, ...(patch.profile || {}) },
+          technologies:
+            patch.technologies !== undefined
+              ? cleanTags(patch.technologies)
+              : current.technologies,
+          projects:
+            patch.projects !== undefined ? patch.projects : current.projects,
+        };
+        localStorage.setItem(SITE_KEY, JSON.stringify(next));
+        return next;
+      } catch {
+        return null;
+      }
     },
 
     /* Foto de perfil del administrador */

@@ -25,6 +25,10 @@
       title: 'Gestor de Publicaciones',
       subtitle: 'Administra, filtra y edita todas las entradas de tu blog.',
     },
+    perfil: {
+      title: 'Perfil y Barra Lateral',
+      subtitle: 'Edita tu tarjeta de perfil, las tecnologías del filtro y la sección En construcción.',
+    },
   };
 
   const state = {
@@ -32,6 +36,8 @@
     editingId: null,
     composerImage: '',
     editTags: null,
+    dashTechEditor: null,
+    dashProjectsDraft: null,
   };
 
   const $ = (sel) => document.querySelector(sel);
@@ -70,6 +76,7 @@
     });
 
     if (state.tab === 'gestor') renderTable();
+    if (state.tab === 'perfil') renderProfileTab();
   }
 
   window.addEventListener('hashchange', () => setTab(location.hash.slice(1)));
@@ -200,7 +207,28 @@
           <label class="visually-hidden" for="edit-title">Título</label>
           <input class="input input--hot" id="edit-title" name="title" value="${esc(post.title)}" required>
           <label class="visually-hidden" for="edit-content">Contenido</label>
-          <textarea class="input textarea textarea--hot" id="edit-content" name="content" rows="3">${esc(post.content)}</textarea>
+          <textarea class="input textarea textarea--hot" id="edit-content" name="content" rows="4">${esc(post.content)}</textarea>
+          <div class="form-grid-2">
+            <div class="field">
+              <label class="label">Tipo</label>
+              <select class="input select select--sm" name="kind">
+                <option value="Proyecto"${post.kind === 'Proyecto' ? ' selected' : ''}>Proyecto</option>
+                <option value="Nota"${post.kind === 'Nota' ? ' selected' : ''}>Nota</option>
+                <option value="Guía"${post.kind === 'Guía' ? ' selected' : ''}>Guía</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="label">Estado</label>
+              <select class="input select select--sm" name="status">
+                <option value="publicado"${post.status === 'publicado' ? ' selected' : ''}>Publicado</option>
+                <option value="borrador"${post.status === 'borrador' ? ' selected' : ''}>Borrador</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label class="label">Imagen de portada (URL o ruta)</label>
+            <input class="input select--sm" name="image" value="${esc(post.image || '')}" placeholder="assets/images/thumb-design.svg">
+          </div>
           <div data-edit-tags></div>
           <div class="edit-form-footer">
             <div class="edit-form-actions">
@@ -291,6 +319,9 @@
     Store.update(state.editingId, {
       title,
       content: form.content.value.trim(),
+      kind: form.kind?.value || 'Proyecto',
+      status: form.status?.value || 'publicado',
+      image: form.image ? form.image.value.trim() : undefined,
       tags: state.editTags ? state.editTags.get() : undefined,
     });
 
@@ -385,9 +416,125 @@
     window.location.href = 'index.html';
   });
 
+  /* ---------------------------------------------------------------
+   * Pestaña 3: Perfil y Barra Lateral (Tarjeta perfil, Tecnologías, En construcción)
+   * ------------------------------------------------------------- */
+  function syncDashProjectsFromDOM() {
+    const list = $('#dash-build-list');
+    if (!list || !state.dashProjectsDraft) return;
+    state.dashProjectsDraft = state.dashProjectsDraft.map((_, idx) => ({
+      icon: list.querySelector(`[name="p-icon-${idx}"]`)?.value.trim() || '</>',
+      name: list.querySelector(`[name="p-name-${idx}"]`)?.value.trim() || '',
+      desc: list.querySelector(`[name="p-desc-${idx}"]`)?.value.trim() || '',
+    }));
+  }
+
+  function renderDashProjectsList() {
+    const list = $('#dash-build-list');
+    if (!list || !state.dashProjectsDraft) return;
+    list.innerHTML = state.dashProjectsDraft
+      .map(
+        (item, idx) => `
+        <div class="build-edit-row" data-idx="${idx}">
+          <input class="input select--sm build-icon-input" name="p-icon-${idx}" value="${esc(item.icon)}" placeholder="</>" aria-label="Icono">
+          <div class="build-edit-fields">
+            <input class="input select--sm" name="p-name-${idx}" value="${esc(item.name)}" placeholder="Nombre del proyecto" required>
+            <input class="input select--sm" name="p-desc-${idx}" value="${esc(item.desc)}" placeholder="Descripción corta">
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm btn-danger-soft" data-dash-remove-proj="${idx}">${UI.Icons.trash}</button>
+        </div>`
+      )
+      .join('');
+  }
+
+  function renderProfileTab() {
+    const cfg = Store.getSiteConfig();
+    const pForm = $('#dash-profile-form');
+    if (pForm) {
+      pForm.name.value = cfg.profile.name || '';
+      pForm.role.value = cfg.profile.role || '';
+      pForm.bio.value = cfg.profile.bio || '';
+      pForm.location.value = cfg.profile.location || '';
+      pForm.githubUrl.value = cfg.profile.githubUrl || '';
+      const sideName = document.querySelector('.dash-user-name');
+      if (sideName) sideName.textContent = cfg.profile.name || 'Erick';
+    }
+
+    const techRoot = $('#dash-tech-tags');
+    if (techRoot) {
+      state.dashTechEditor = UI.TagInput(techRoot, cfg.technologies);
+    }
+
+    state.dashProjectsDraft = cfg.projects.map((x) => ({ ...x }));
+    renderDashProjectsList();
+  }
+
+  $('#dash-avatar-file')?.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const dataUrl = await UI.readImage(file, 400);
+      if (Store.setAvatar(dataUrl)) {
+        UI.syncAvatars();
+        UI.toast('Foto de perfil actualizada', 'success');
+      }
+    } catch (err) {
+      UI.toast(err.message, 'error');
+    }
+  });
+
+  $('#dash-profile-form')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const f = e.target;
+    Store.saveSiteConfig({
+      profile: {
+        name: f.name.value.trim() || 'Erick',
+        role: f.role.value.trim() || 'Estudiante de Ingeniería · Dev',
+        bio: f.bio.value.trim(),
+        location: f.location.value.trim(),
+        githubUrl: f.githubUrl.value.trim(),
+      },
+    });
+    renderProfileTab();
+    UI.toast('Tarjeta de perfil actualizada', 'success');
+  });
+
+  $('#dash-tech-form')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const tags = state.dashTechEditor ? state.dashTechEditor.get() : [];
+    Store.saveSiteConfig({ technologies: tags });
+    UI.toast('Tecnologías actualizadas', 'success');
+  });
+
+  $('#dash-add-project')?.addEventListener('click', () => {
+    syncDashProjectsFromDOM();
+    if (!state.dashProjectsDraft) state.dashProjectsDraft = [];
+    state.dashProjectsDraft.push({ icon: '</>', name: 'Nuevo proyecto', desc: 'En desarrollo' });
+    renderDashProjectsList();
+  });
+
+  $('#dash-build-list')?.addEventListener('click', (e) => {
+    const rm = e.target.closest('[data-dash-remove-proj]');
+    if (!rm) return;
+    syncDashProjectsFromDOM();
+    state.dashProjectsDraft.splice(Number(rm.dataset.dashRemoveProj), 1);
+    renderDashProjectsList();
+  });
+
+  $('#dash-build-form')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    syncDashProjectsFromDOM();
+    const clean = (state.dashProjectsDraft || []).filter((x) => x.name);
+    Store.saveSiteConfig({ projects: clean });
+    renderDashProjectsList();
+    UI.toast('Sección En construcción actualizada', 'success');
+  });
+
   function renderAll() {
     renderMyPosts();
     renderTable();
+    renderProfileTab();
   }
 
   renderAll();
