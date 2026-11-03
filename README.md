@@ -23,6 +23,5 @@ Maquetado web en **HTML5, CSS3 y JavaScript**, diseñado sobre una paleta oscura
    - Columnas: *Título del post*, *Categoría*, *Fecha de creación*, *Estado* (indicador verde para `Publicado`, naranja para `Borrador`) y *Acciones* (`Editar` / `Borrar`).
 
 5. **Componentes Modales ([`js/ui.js`](file:///c:/Users/erick/OneDrive/Desktop/DevBlog/js/ui.js))**:
-   - **Modal de Login (`Iniciar Sesión`):** se abre desde el botón invisible ubicado junto a la foto de perfil (o al hacer clic en la foto de perfil). Guarda `isAdmin = true` en `localStorage` y redirige al Dashboard.
-     - Credenciales por defecto: `erick@devblog.com` / `devblog123`.
+   - **Modal de Login (`Iniciar Sesión`):** se abre desde el botón invisible ubicado junto a la foto de perfil. Valida las credenciales del administrador único antes de permitir el acceso al Dashboard.
    - **Modal de Eliminación (`¿Eliminar publicación?`):** alerta flotante con confirmación en rojo (`Sí, eliminar`) o `Cancelar` antes de borrar cualquier post.

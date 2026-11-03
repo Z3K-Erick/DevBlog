@@ -3,7 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mi Feed — {EG} DevBlog</title>
+  <title>Panel de Administración — {EG} DevBlog</title>
+  <script>
+    // Bloqueo inmediato: nadie puede acceder al panel sin haber iniciado sesión
+    if (localStorage.getItem('devblog:admin:session') !== 'active') {
+      window.location.replace('index.html');
+    }
+  </script>
   <link rel="icon" type="image/svg+xml" href="assets/images/logo.svg">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/blog.css">
@@ -13,11 +19,11 @@
 
   <div class="dash-shell">
     <!-- ======================================================================
-         MENÚ LATERAL DEL DASHBOARD PRIVADO
+         MENÚ LATERAL DEL PANEL DE ADMINISTRADOR
          ====================================================================== -->
     <aside class="dash-sidebar" aria-label="Panel de control">
       <div class="dash-brand">
-        <a href="index.html" class="logo" aria-label="Inicio DevBlog">
+        <a href="index.html" class="logo" aria-label="Ir al blog">
           <span class="logo-brace">{</span><span class="logo-letters">EG</span><span class="logo-brace">}</span>
         </a>
       </div>
@@ -41,19 +47,24 @@
       </nav>
 
       <div class="dash-sidebar-bottom">
-        <a href="index.html" class="dash-visit-link">↗ Ver blog público</a>
+        <a href="index.html" class="dash-visit-link">↗ Ir al blog</a>
 
         <div class="dash-user">
-          <img src="assets/images/avatar.svg" alt="Erick">
+          <img src="assets/images/avatar.svg" alt="Foto de perfil de Erick" data-user-avatar>
           <div>
             <span class="dash-user-name">Erick</span>
-            <span class="dash-user-role">Admin</span>
+            <span class="dash-user-role">Administrador</span>
           </div>
         </div>
 
+        <!-- Opción para subir y actualizar la foto de perfil en cualquier momento -->
+        <label class="dash-avatar-btn">
+          📷 Cambiar foto de perfil
+          <input type="file" id="avatar-upload-input" accept="image/*" class="visually-hidden">
+        </label>
+
         <button type="button" class="dash-logout-btn" id="logout-btn">
           Cerrar sesión
-          <span>Ver como visitante</span>
         </button>
       </div>
     </aside>
@@ -62,7 +73,6 @@
          ÁREA PRINCIPAL DEL DASHBOARD
          ====================================================================== -->
     <div class="dash-main">
-      <!-- Barra superior -->
       <header class="dash-topbar">
         <div class="dash-crumbs">
           Dashboard &nbsp;/&nbsp; <strong id="dash-crumb">Mi Feed</strong>
@@ -71,7 +81,6 @@
       </header>
 
       <main class="dash-content">
-        <!-- Encabezado dinámico según la pestaña activa -->
         <div class="dash-header">
           <div>
             <h1 class="dash-title" id="dash-title">Mi Feed</h1>
@@ -80,11 +89,10 @@
             </p>
           </div>
           <button type="button" class="admin-mode-pill" id="header-action-btn">
-            Vista de Administrador
+            Administrador
           </button>
         </div>
 
-        <!-- Selector de pestañas -->
         <div class="dash-tabs" role="tablist" aria-label="Vistas del dashboard">
           <button type="button" class="dash-tab is-active" role="tab" aria-selected="true" data-tab="mi-feed">
             Mi Feed
@@ -95,7 +103,7 @@
         </div>
 
         <!-- ==================================================================
-             PANTALLA 3: PESTAÑA "MI FEED" (CREACIÓN Y EDICIÓN EN CALIENTE)
+             PESTAÑA 1: "MI FEED" (CREACIÓN Y EDICIÓN EN CALIENTE)
              ================================================================== -->
         <section class="tab-panel" id="panel-mi-feed" aria-label="Mi Feed">
 
@@ -106,18 +114,18 @@
                 <h2 class="composer-title">Crear nueva publicación</h2>
                 <p class="composer-sub">Comparte qué estás construyendo, agrega etiquetas o sube capturas</p>
               </div>
-              <span class="composer-badge">Borrador local</span>
+              <span class="composer-badge">Nuevo post</span>
             </div>
 
             <form class="composer-body" id="composer" novalidate>
               <div class="field">
                 <label class="label" for="composer-title">Título del post</label>
-                <input class="input" id="composer-title" name="title" placeholder="Ej: Construyendo mi primera API con FastAPI..." required>
+                <input class="input" id="composer-title" name="title" placeholder="Escribe el título de tu publicación..." required>
               </div>
 
               <div class="field">
                 <label class="label" for="composer-content">¿Qué estás construyendo o aprendiendo hoy?</label>
-                <textarea class="input textarea" id="composer-content" name="content" rows="4" placeholder="Escribe el contenido de tu publicación, agrega bloques de código (```jsx) o explica tu avance..."></textarea>
+                <textarea class="input textarea" id="composer-content" name="content" rows="4" placeholder="Escribe el contenido de tu publicación, agrega bloques de código (```js) o explica tu avance..."></textarea>
               </div>
 
               <div class="field">
@@ -129,7 +137,7 @@
                 <label class="label" for="composer-image-url">Imagen de portada (opcional)</label>
                 <div class="upload-row">
                   <span class="upload-icon" aria-hidden="true">🖼</span>
-                  <input class="input" id="composer-image-url" name="imageUrl" placeholder="Subir imagen o pegar URL (ej. assets/images/kanban-preview.svg)">
+                  <input class="input" id="composer-image-url" name="imageUrl" placeholder="Subir imagen o pegar URL...">
                   <label class="upload-trigger">
                     Subir archivo
                     <input type="file" id="composer-image-file" accept="image/*" class="visually-hidden">
@@ -140,6 +148,9 @@
               <div class="composer-foot">
                 <span class="form-hint">Se publica al instante en el feed principal</span>
                 <div class="composer-actions">
+                  <button type="button" class="btn btn-secondary btn-sm" id="composer-cancel">
+                    Cancelar
+                  </button>
                   <button type="button" class="btn btn-secondary btn-sm" id="composer-draft">
                     Guardar como borrador
                   </button>
@@ -154,23 +165,22 @@
           <!-- Lista de publicaciones con edición en caliente -->
           <div class="myfeed-head">
             <h2 class="myfeed-title">Mi Feed</h2>
-            <span class="muted" id="my-posts-count">3 publicaciones</span>
+            <span class="muted" id="my-posts-count">1 publicación</span>
           </div>
 
           <div class="feed-list" id="my-posts"></div>
         </section>
 
         <!-- ==================================================================
-             PANTALLA 4: PESTAÑA "GESTOR DE PUBLICACIONES" (TABLA)
+             PESTAÑA 2: "GESTOR DE PUBLICACIONES" (TABLA)
              ================================================================== -->
         <section class="tab-panel" id="panel-gestor" aria-label="Gestor de Publicaciones" hidden>
           <div class="table-card">
             <div class="table-card-head">
               <h2 class="table-card-title">Listado de publicaciones</h2>
-              <span class="muted" id="table-summary">3 en total</span>
+              <span class="muted" id="table-summary">1 en total</span>
             </div>
 
-            <!-- Barra de búsqueda y filtros -->
             <div class="table-filters">
               <div class="table-search-wrap">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -199,7 +209,6 @@
               </select>
             </div>
 
-            <!-- Tabla de publicaciones -->
             <div class="table-wrap">
               <table class="posts-table">
                 <thead>

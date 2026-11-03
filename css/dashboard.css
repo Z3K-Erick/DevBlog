@@ -119,6 +119,28 @@
   font-size: 0.7rem;
 }
 
+.dash-avatar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: var(--radius);
+  background: var(--surface-sunken);
+  border: 1px dashed var(--border-strong);
+  color: var(--primary-text);
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--ease), background var(--ease);
+}
+
+.dash-avatar-btn:hover {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+}
+
 .dash-logout-btn {
   width: 100%;
   padding: 8px 10px;
@@ -126,17 +148,10 @@
   background: var(--surface);
   border: 1px solid var(--border);
   color: var(--text-soft);
-  font-size: 0.74rem;
+  font-size: 0.76rem;
   font-weight: 600;
-  text-align: left;
-  line-height: 1.35;
+  text-align: center;
   transition: border-color var(--ease), background var(--ease);
-}
-
-.dash-logout-btn span {
-  display: block;
-  color: var(--text-faint);
-  font-weight: 400;
 }
 
 .dash-logout-btn:hover {

@@ -116,16 +116,16 @@
           </div>
           <button type="button" class="icon-btn" data-dismiss aria-label="Cerrar">${Icons.close}</button>
         </div>
-        <form class="modal-body" id="login-form" novalidate>
+        <form class="modal-body" id="login-form" autocomplete="off" novalidate>
           <div class="field">
             <label class="label" for="login-user">Usuario / Correo</label>
-            <input class="input" id="login-user" name="user" autocomplete="username" placeholder="erick@devblog.com" value="erick@devblog.com" data-autofocus required>
+            <input class="input" id="login-user" name="user" placeholder="Ingresa tu usuario o correo" data-autofocus required>
           </div>
           <div class="field">
             <label class="label" for="login-pass">Contraseña</label>
-            <input class="input" id="login-pass" name="password" type="password" autocomplete="current-password" placeholder="••••••••••••" value="devblog123" required>
+            <input class="input" id="login-pass" name="password" type="password" placeholder="••••••••••••" required>
           </div>
-          <p class="form-error" id="login-error" role="alert" hidden>Credenciales inválidas. Usa erick@devblog.com / devblog123</p>
+          <p class="form-error" id="login-error" role="alert" hidden>Usuario o contraseña incorrectos.</p>
           <button type="submit" class="btn btn-primary btn-block">Ingresar al Dashboard</button>
         </form>
       </div>`
@@ -152,7 +152,12 @@
   }
 
   function openLogin() {
+    if (Auth.isAdmin()) {
+      window.location.href = 'dashboard.html';
+      return;
+    }
     const modal = getLoginModal();
+    modal.querySelector('#login-form').reset();
     modal.querySelector('#login-error').hidden = true;
     openModal(modal);
   }
@@ -391,10 +396,21 @@
   }
 
   /* ---------------------------------------------------------------
-   * Header: botón invisible al lado de la foto de perfil + avatar
+   * Sincronización de foto de perfil y Header
    * ------------------------------------------------------------- */
+  function syncAvatars() {
+    const src = window.DevBlog.Store.getAvatar();
+    document
+      .querySelectorAll('.avatar-btn img, .profile-avatar-circle img, .post-author-avatar, .dash-user img, [data-user-avatar]')
+      .forEach((img) => {
+        img.src = src;
+      });
+  }
+
   function initHeader() {
-    // Botón invisible al lado de la foto de perfil
+    syncAvatars();
+
+    // Botón invisible al lado de la foto de perfil: único acceso al login
     const secretBtn = document.getElementById('secret-login-btn');
     if (secretBtn) {
       secretBtn.addEventListener('click', () => {
@@ -402,13 +418,11 @@
       });
     }
 
-    // La foto de perfil circular también abre el modal (o lleva al dashboard si ya está activo)
     const avatar = document.getElementById('avatar-btn');
     if (avatar) {
       avatar.classList.toggle('is-admin', Auth.isAdmin());
       avatar.addEventListener('click', () => {
         if (Auth.isAdmin()) window.location.href = 'dashboard.html';
-        else openLogin();
       });
     }
 
@@ -420,10 +434,6 @@
         const q = search.querySelector('input').value.trim();
         window.location.href = `index.html${q ? `?q=${encodeURIComponent(q)}` : ''}#feed`;
       });
-    }
-
-    if (new URLSearchParams(window.location.search).get('login') === '1') {
-      openLogin();
     }
   }
 
@@ -456,5 +466,6 @@
     tagClass,
     TagInput,
     readImage,
+    syncAvatars,
   };
 })();

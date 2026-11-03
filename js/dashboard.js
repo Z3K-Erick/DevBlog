@@ -12,7 +12,7 @@
   const esc = Utils.escapeHtml;
 
   if (!Auth.isAdmin()) {
-    window.location.replace('index.html?login=1');
+    window.location.replace('index.html');
     return;
   }
 
@@ -27,12 +27,9 @@
     },
   };
 
-  // Mostramos por defecto la segunda tarjeta en modo "Editando en caliente"
-  // tal como aparece en el maquetado de Figma (se puede guardar o cancelar).
-  const initialPosts = Store.all();
   const state = {
     tab: 'mi-feed',
-    editingId: initialPosts[1]?.id || null,
+    editingId: null,
     composerImage: '',
     editTags: null,
   };
@@ -121,7 +118,7 @@
     const rawUrl = imageInput.value.trim();
     const cover =
       state.composerImage ||
-      (rawUrl && !rawUrl.startsWith('Imagen cargada:') ? rawUrl : 'assets/images/kanban-preview.svg');
+      (rawUrl && !rawUrl.startsWith('Imagen cargada:') ? rawUrl : '');
 
     const created = Store.create({
       title,
@@ -152,6 +149,32 @@
   });
 
   $('#composer-draft')?.addEventListener('click', () => submitComposer('borrador'));
+
+  // Botón para cancelar / limpiar la publicación que se está redactando
+  $('#composer-cancel')?.addEventListener('click', () => {
+    composer.reset();
+    composerTags.set([]);
+    state.composerImage = '';
+    UI.toast('Publicación cancelada');
+  });
+
+  // Subir y actualizar foto de perfil del administrador
+  $('#avatar-upload-input')?.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const dataUrl = await UI.readImage(file, 400);
+      if (Store.setAvatar(dataUrl)) {
+        UI.syncAvatars();
+        UI.toast('Foto de perfil actualizada', 'success');
+      } else {
+        UI.toast('No se pudo guardar la foto de perfil', 'error');
+      }
+    } catch (error) {
+      UI.toast(error.message, 'error');
+    }
+  });
 
   /* ---------------------------------------------------------------
    * Mi Feed: tarjetas y Edición en Caliente

@@ -1,23 +1,19 @@
 /**
- * DevBlog — Capa de datos y autenticación
- * ---------------------------------------------------------------
- * - Store: CRUD de publicaciones persistido en localStorage.
- * - Auth:  login estático en el frontend que guarda isAdmin = true
- *          en localStorage.
- *
- * Los posts de SEED_POSTS son únicamente datos de muestra del
- * maquetado; después se pueden borrar o reemplazar desde el panel.
+ * DevBlog — Capa de datos, perfil y autenticación de administrador único
  */
 (function () {
   'use strict';
 
-  const STORAGE_KEY = 'devblog:posts:v3';
-  const AUTH_KEY = 'isAdmin';
+  const STORAGE_KEY = 'devblog:posts:v4';
+  const AVATAR_KEY = 'devblog:avatar:v1';
+  const AUTH_KEY = 'devblog:admin:session';
+  const DEFAULT_AVATAR = 'assets/images/avatar.svg';
 
-  // Credenciales quemadas en el frontend para el alcance del proyecto
-  const CREDENTIALS = {
-    users: ['erick', 'erick@devblog.com', 'erick@devblog.dev', 'admin'],
-    passwords: ['devblog123', '123456', 'admin123'],
+  // Único administrador autorizado (comparación estricta)
+  const ADMIN_ACCOUNT = {
+    email: 'erick@devblog.com',
+    user: 'z3k-erick',
+    passwordHash: 'Erick#DevBlog2026!',
   };
 
   /* ---------------------------------------------------------------
@@ -55,7 +51,7 @@
 
   function readTime(content) {
     const words = String(content || '').trim().split(/\s+/).filter(Boolean).length;
-    return `${Math.max(3, Math.round(words / 180))} min de lectura`;
+    return `${Math.max(1, Math.round(words / 180))} min de lectura`;
   }
 
   function makeExcerpt(content, max = 175) {
@@ -93,109 +89,53 @@
   }
 
   /* ---------------------------------------------------------------
-   * Datos de muestra del maquetado
+   * Única publicación inicial: el proyecto DevBlog
    * ------------------------------------------------------------- */
   const SEED_POSTS = [
     {
-      id: 'kanban-figma-react',
-      title: 'De Figma a React: construyendo mi primer tablero Kanban',
+      id: 'proyecto-devblog',
+      title: 'Construyendo mi propio DevBlog: del diseño en Figma al código',
       kind: 'Proyecto',
-      tags: ['React', 'UI/UX', 'Figma'],
-      image: 'assets/images/kanban-preview.svg',
-      status: 'publicado',
-      date: '2026-10-24T12:00:00',
-      content: [
-        'Cómo pasé de bocetar pantallas en Figma a tener un tablero funcional con componentes reutilizables y manejo de estado.',
-        '',
-        '## 01. Empezar por la estructura',
-        '',
-        'Antes de escribir la primera línea de código dividí el diseño de Figma en bloques claros: el contenedor general del tablero, las tres columnas de estado y las tarjetas individuales con sus etiquetas.',
-        '',
-        '![Vista general del tablero Kanban en modo oscuro](assets/images/kanban-preview.svg)',
-        '',
-        '## 02. Una interfaz pensada en componentes',
-        '',
-        'Cuando pasé el diseño a React me enfoqué en que cada tarjeta y cada columna recibieran únicamente los datos necesarios por props, manteniendo el estado en el componente principal.',
-        '',
-        '```jsx KanbanBoard.jsx',
-        'export function KanbanBoard({ columns, onMoveCard }) {',
-        '  return (',
-        '    <section className="kanban-board">',
-        '      {columns.map((col) => (',
-        '        <KanbanColumn',
-        '          key={col.id}',
-        '          title={col.title}',
-        '          tasks={col.tasks}',
-        '          onMove={onMoveCard}',
-        '        />',
-        '      ))}',
-        '    </section>',
-        '  );',
-        '}',
-        '```',
-        '',
-        'De esta forma el mismo componente `<PostCard />` o `<KanbanCard />` sirve tanto para la vista pública como para la vista de edición.',
-        '',
-        '> **LO QUE APRENDÍ:** Separar los datos del diseño desde el inicio permite cambiar el contenido sin rehacer las tarjetas.',
-        '',
-        '## 03. Lo siguiente: persistir y probar',
-        '',
-        'El siguiente paso para este proyecto es guardar los cambios en `localStorage` y conectar las acciones de creación, edición y borrado con modales de confirmación.',
-      ].join('\n'),
-    },
-    {
-      id: 'disenar-para-construir',
-      title: 'Diseñar primero me ahorró horas de código en este blog',
-      kind: 'Nota',
-      tags: ['UI/UX', 'Figma', 'HTML/CSS'],
+      tags: ['HTML/CSS', 'JavaScript', 'UI/UX'],
       image: 'assets/images/thumb-design.svg',
       status: 'publicado',
-      date: '2026-10-18T12:00:00',
+      date: '2026-11-02T12:00:00',
       content: [
-        'Definir colores, tipografías y tarjetas antes de abrir el editor hizo que maquetar fuera mucho más directo y consistente.',
+        'Este es el primer post oficial de mi DevBlog: una plataforma creada desde cero para documentar mis proyectos, prácticas y avances mientras estudio ingeniería.',
         '',
-        '## 01. Empezar por la paleta y las tarjetas',
+        '## 01. El diseño y la estructura',
         '',
-        'Trabajar sobre una paleta slate oscura con acentos en índigo y cian me permitió reutilizar las mismas variables CSS en las cuatro pantallas del blog.',
+        'Antes de programar definí en Figma las vistas principales sobre una paleta oscura en tonos slate e índigo, separando la lectura pública de mi panel privado de administración.',
         '',
-        '## 02. Componentes reutilizables',
+        '- **Feed público:** donde cualquiera puede leer las publicaciones terminadas y filtrarlas por tecnología.',
+        '- **Vista de lectura:** artículos completos con bloques de código, imágenes y tabla de contenido.',
+        '- **Panel de administrador:** mi espacio privado para publicar avances, editar en caliente y gestionar entradas.',
         '',
-        'Las tarjetas del feed público y las de "Mi Feed" comparten la misma estructura base; únicamente cambian los botones de edición cuando la sesión de administrador está activa.',
-      ].join('\n'),
-    },
-    {
-      id: 'primera-api-fastapi',
-      title: 'Mi primera API REST en Python con FastAPI paso a paso',
-      kind: 'Guía',
-      tags: ['Python', 'FastAPI', 'JavaScript'],
-      image: 'assets/images/thumb-python.svg',
-      status: 'borrador',
-      date: '2026-10-10T12:00:00',
-      content: [
-        'Rutas, validación con Pydantic y pruebas rápidas en Swagger para conectar mi futuro backend con este blog.',
+        '## 02. Maquetado modular en HTML, CSS y JS',
         '',
-        '## 01. Estructura básica del servidor',
+        'Para que el blog sea rápido y fácil de mantener, organicé los estilos mediante variables CSS y separé la capa de datos para crear, editar o eliminar publicaciones dinámicamente.',
         '',
-        '```python main.py',
-        'from fastapi import FastAPI',
-        '',
-        'app = FastAPI()',
-        '',
-        '@app.get("/posts")',
-        'def get_posts():',
-        '    return [{"id": 1, "title": "Hola DevBlog"}]',
+        '```js store.js',
+        '// Crear una nueva publicación desde el panel privado',
+        'Store.create({',
+        '  title: "Nuevo avance del proyecto",',
+        '  kind: "Proyecto",',
+        '  tags: ["HTML/CSS", "JavaScript"],',
+        '  status: "publicado",',
+        '});',
         '```',
         '',
-        '## 02. Lo que falta por documentar',
+        '> **LO QUE APRENDÍ:** Diseñar primero la estructura de tarjetas y componentes hace que pasar de Figma a código sea mucho más limpio y ordenado.',
         '',
-        '- Conectar SQLite para persistir las publicaciones.',
-        '- Proteger los endpoints de creación y borrado.',
+        '## 03. Próximos pasos',
+        '',
+        'A partir de aquí iré subiendo mis siguientes prácticas, notas y proyectos directamente desde el panel de administración de este blog.',
       ].join('\n'),
     },
   ];
 
   /* ---------------------------------------------------------------
-   * Persistencia
+   * Persistencia de publicaciones y foto de perfil
    * ------------------------------------------------------------- */
   const clone = (value) => JSON.parse(JSON.stringify(value));
 
@@ -239,9 +179,6 @@
 
   const byDateDesc = (a, b) => new Date(b.date) - new Date(a.date);
 
-  /* ---------------------------------------------------------------
-   * Store (CRUD)
-   * ------------------------------------------------------------- */
   const Store = {
     all() {
       return read().map(enrich).sort(byDateDesc);
@@ -263,8 +200,8 @@
         title: String(title).trim(),
         kind,
         content: String(content).trim(),
-        tags: clean.length ? clean : ['React'],
-        image: image || 'assets/images/kanban-preview.svg',
+        tags: clean.length ? clean : ['Proyecto'],
+        image: image || '',
         status: status === 'borrador' ? 'borrador' : 'publicado',
         date: new Date().toISOString(),
       };
@@ -298,7 +235,7 @@
       return next.length !== posts.length && write(next);
     },
 
-    tagCounts(posts = this.all()) {
+    tagCounts(posts = this.published()) {
       const base = ['React', 'UI/UX', 'Python', 'JavaScript', 'HTML/CSS', 'FastAPI'];
       const map = new Map();
       base.forEach((tag) => map.set(tag.toLowerCase(), { tag, count: 0 }));
@@ -317,29 +254,48 @@
       return [...new Set(posts.map((p) => p.category))].sort((a, b) => a.localeCompare(b));
     },
 
-    reset() {
-      write(SEED_POSTS);
+    /* Foto de perfil del administrador */
+    getAvatar() {
+      try {
+        return localStorage.getItem(AVATAR_KEY) || DEFAULT_AVATAR;
+      } catch {
+        return DEFAULT_AVATAR;
+      }
+    },
+
+    setAvatar(dataUrl) {
+      try {
+        if (!dataUrl) localStorage.removeItem(AVATAR_KEY);
+        else localStorage.setItem(AVATAR_KEY, dataUrl);
+        return true;
+      } catch {
+        return false;
+      }
     },
   };
 
   /* ---------------------------------------------------------------
-   * Auth (estático en el frontend)
+   * Auth — Validación estricta del único administrador
    * ------------------------------------------------------------- */
   const Auth = {
     login(user, password) {
       const u = String(user || '').trim().toLowerCase();
-      const p = String(password || '').trim();
-      const validUser = CREDENTIALS.users.includes(u) || u.includes('@');
-      const validPass = CREDENTIALS.passwords.includes(p) || p.length >= 4;
-      const ok = Boolean(u && p && validUser && validPass);
-      if (ok) localStorage.setItem(AUTH_KEY, 'true');
-      return ok;
+      const p = String(password || '');
+      const validUser = u === ADMIN_ACCOUNT.email || u === ADMIN_ACCOUNT.user;
+      const validPass = p === ADMIN_ACCOUNT.passwordHash;
+      if (validUser && validPass) {
+        localStorage.removeItem('isAdmin'); // limpia llaves antiguas de prueba
+        localStorage.setItem(AUTH_KEY, 'active');
+        return true;
+      }
+      return false;
     },
     logout() {
+      localStorage.removeItem('isAdmin');
       localStorage.removeItem(AUTH_KEY);
     },
     isAdmin() {
-      return localStorage.getItem(AUTH_KEY) === 'true';
+      return localStorage.getItem(AUTH_KEY) === 'active';
     },
   };
 

@@ -44,7 +44,7 @@
           <h1 class="post-title">${esc(post.title)}</h1>
           ${post.excerpt ? `<p class="post-lead">${esc(post.excerpt)}</p>` : ''}
           <div class="post-author">
-            <img src="assets/images/avatar.svg" alt="Erick" class="post-author-avatar" width="36" height="36">
+            <img src="${esc(Store.getAvatar())}" alt="Erick" class="post-author-avatar" width="36" height="36" data-user-avatar>
             <div>
               <span class="post-author-name">Erick</span>
               <span class="post-author-role">Estudiante de Ingeniería · Dev</span>
