@@ -1,0 +1,510 @@
+/* ==========================================================================
+   {EG} DevBlog — Dashboard Privado (Pantallas 3 y 4 del Maquetado)
+   - Pestaña "Mi Feed" (publicación rápida + edición en caliente)
+   - Pestaña "Gestor de Publicaciones" (tabla limpia con filtros)
+   ========================================================================== */
+
+.dash-shell {
+  display: grid;
+  grid-template-columns: 225px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+/* --------------------------------------------------------------------------
+   Sidebar lateral izquierdo
+   -------------------------------------------------------------------------- */
+.dash-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 14px;
+  background: var(--bg-deep);
+  border-right: 1px solid var(--border);
+}
+
+.dash-brand {
+  padding: 4px 6px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dash-section-label {
+  padding: 18px 10px 8px;
+  color: var(--text-faint);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dash-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dash-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  font-weight: 500;
+  text-align: left;
+  transition: background var(--ease), color var(--ease), border-color var(--ease);
+}
+
+.dash-nav-btn:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.dash-nav-btn.is-active {
+  color: var(--text);
+  background: var(--surface);
+  border-color: var(--border-strong);
+}
+
+.dash-sidebar-bottom {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.dash-visit-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.dash-visit-link:hover {
+  color: var(--text);
+}
+
+.dash-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+}
+
+.dash-user img {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+}
+
+.dash-user-name {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.dash-user-role {
+  display: block;
+  color: var(--text-faint);
+  font-size: 0.7rem;
+}
+
+.dash-logout-btn {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-soft);
+  font-size: 0.74rem;
+  font-weight: 600;
+  text-align: left;
+  line-height: 1.35;
+  transition: border-color var(--ease), background var(--ease);
+}
+
+.dash-logout-btn span {
+  display: block;
+  color: var(--text-faint);
+  font-weight: 400;
+}
+
+.dash-logout-btn:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
+}
+
+/* --------------------------------------------------------------------------
+   Área principal
+   -------------------------------------------------------------------------- */
+.dash-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dash-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 52px;
+  padding: 0 32px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-faint);
+  font-size: 0.78rem;
+}
+
+.dash-crumbs strong {
+  color: var(--text-soft);
+  font-weight: 600;
+}
+
+.dash-session {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+}
+
+.dash-session::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+}
+
+.dash-content {
+  width: 100%;
+  max-width: 940px;
+  padding: 28px 32px 64px;
+}
+
+.dash-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.dash-title {
+  font-size: 1.65rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+}
+
+.dash-subtitle {
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 0.86rem;
+}
+
+.admin-mode-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--primary-soft);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  color: var(--primary-text);
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+/* Pestañas superiores Mi Feed / Gestor de Publicaciones */
+.dash-tabs {
+  display: inline-flex;
+  gap: 8px;
+  margin-bottom: 22px;
+}
+
+.dash-tab {
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: background var(--ease), color var(--ease), border-color var(--ease);
+}
+
+.dash-tab:hover {
+  color: var(--text);
+}
+
+.dash-tab.is-active {
+  color: var(--primary-text);
+  background: var(--primary-soft);
+  border-color: var(--primary);
+}
+
+/* --------------------------------------------------------------------------
+   Caja de publicación rápida ("Crear nueva publicación")
+   -------------------------------------------------------------------------- */
+.composer-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  margin-bottom: 28px;
+}
+
+.composer-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.composer-title {
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+.composer-sub {
+  margin-top: 2px;
+  color: var(--text-faint);
+  font-size: 0.78rem;
+}
+
+.composer-badge {
+  color: var(--text-faint);
+  font-size: 0.72rem;
+}
+
+.composer-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.upload-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.upload-row .input {
+  padding-left: 34px;
+  padding-right: 110px;
+}
+
+.upload-icon {
+  position: absolute;
+  left: 11px;
+  color: var(--primary-text);
+  pointer-events: none;
+}
+
+.upload-trigger {
+  position: absolute;
+  right: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.upload-trigger:hover {
+  color: var(--text);
+}
+
+.composer-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 6px;
+}
+
+.composer-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* --------------------------------------------------------------------------
+   Sección Mi Feed y Tarjeta en modo "Editando en caliente"
+   -------------------------------------------------------------------------- */
+.myfeed-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.myfeed-title {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.post-card--editing {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.35), var(--shadow);
+}
+
+.edit-form {
+  gap: 10px;
+}
+
+.input--hot,
+.textarea--hot {
+  border-color: rgba(99, 102, 241, 0.55);
+}
+
+.textarea--hot {
+  min-height: 76px;
+}
+
+.edit-form-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 6px;
+}
+
+.edit-form-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* --------------------------------------------------------------------------
+   Pestaña "Gestor de Publicaciones" (Tabla)
+   -------------------------------------------------------------------------- */
+.table-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 22px;
+}
+
+.table-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.table-card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.table-filters {
+  display: grid;
+  grid-template-columns: minmax(200px, 1.6fr) repeat(3, minmax(120px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.table-search-wrap {
+  position: relative;
+}
+
+.table-search-wrap svg {
+  position: absolute;
+  top: 50%;
+  left: 11px;
+  transform: translateY(-50%);
+  color: var(--text-faint);
+  pointer-events: none;
+}
+
+.table-search-wrap .input {
+  padding-left: 34px;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.posts-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+}
+
+.posts-table th {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-faint);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: left;
+}
+
+.posts-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.posts-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.posts-table tbody tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.table-title {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.table-title:hover {
+  color: var(--primary-text);
+}
+
+.table-actions {
+  display: flex;
+  gap: 6px;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive
+   -------------------------------------------------------------------------- */
+@media (max-width: 860px) {
+  .dash-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .dash-sidebar {
+    position: static;
+    height: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .dash-content {
+    padding: 20px 16px 48px;
+  }
+
+  .table-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+}

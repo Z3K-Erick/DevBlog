@@ -1,171 +1,123 @@
 /**
- * DevBlog - Post Reader Logic (post.html)
- * Renderizado del artículo, Tabla de Contenidos interactiva (TOC),
- * copiado de código y botones de compartir.
+ * DevBlog — Lectura Completa / El Hilo (post.html)
  */
+(function () {
+  'use strict';
 
-document.addEventListener('DOMContentLoaded', () => {
-  loadArticle();
-});
+  const { Store, Auth, Utils, Markdown } = window.DevBlog;
+  const { tagClass, toast } = window.UI;
+  const esc = Utils.escapeHtml;
 
-function loadArticle() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const postId = urlParams.get('id');
-  const postSlug = urlParams.get('slug');
+  const REPO_URL = 'https://github.com/Z3K-Erick/DevBlog';
 
-  let post = null;
-  if (postId) {
-    post = BlogStore.getPostById(postId);
-  } else if (postSlug) {
-    post = BlogStore.getPostBySlug(postSlug);
-  } else {
-    // Si no se pasa parámetro, cargar el primer artículo destacado
-    post = BlogStore.getPosts()[0];
-  }
+  const root = document.getElementById('post-root');
+  const id = new URLSearchParams(window.location.search).get('id');
+  const post = id ? Store.get(id) : Store.published()[0] || Store.all()[0];
+  const canView = post && (post.status === 'publicado' || Auth.isAdmin());
 
-  if (!post) {
-    document.querySelector('.article-container').innerHTML = `
-      <div style="text-align: center; padding: 4rem 1rem;">
-        <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">Artículo no encontrado</h2>
-        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">El artículo solicitado no existe o fue eliminado.</p>
-        <a href="index.html" class="btn btn-primary">← Volver al blog</a>
-      </div>
-    `;
+  if (!canView) {
+    document.title = 'Post no encontrado — {EG} DevBlog';
+    root.innerHTML = `
+      <div class="empty-state empty-state--page">
+        <p class="empty-state-title">Esta publicación no está disponible</p>
+        <p>Puede que se haya eliminado o que sea un borrador privado.</p>
+        <a href="index.html" class="btn btn-primary">← Volver al feed</a>
+      </div>`;
     return;
   }
 
-  // Actualizar título de la página
-  document.title = `${post.title} — DevBlog`;
+  document.title = `${post.title} — {EG} DevBlog`;
 
-  // Inyectar etiquetas
-  const tagsContainer = document.getElementById('article-tags');
-  if (tagsContainer) {
-    tagsContainer.innerHTML = `
-      <span class="badge badge-react">${post.category}</span>
-      ${(post.tags || []).map(t => `<span class="badge badge-ui">${t}</span>`).join('')}
-    `;
-  }
+  const { html, headings } = Markdown.render(post.content);
+  const kindLabel = (post.kind || 'Proyecto').toUpperCase();
+  const dateLabel = Utils.formatDate(post.date).toUpperCase();
 
-  // Inyectar título
-  const titleEl = document.getElementById('article-title');
-  if (titleEl) titleEl.innerText = post.title;
+  root.innerHTML = `
+    <a href="index.html" class="back-link">← Volver al feed</a>
 
-  // Inyectar autor y metadatos
-  const authorName = document.getElementById('article-author-name');
-  if (authorName) authorName.innerText = post.author ? post.author.name : 'Erick';
+    <div class="post-layout">
+      <article class="post-article">
+        ${post.status !== 'publicado' ? '<div class="draft-banner">Borrador — vista previa privada del autor.</div>' : ''}
 
-  const authorRole = document.getElementById('article-author-role');
-  if (authorRole) authorRole.innerText = post.author ? post.author.role : 'Frontend Developer';
+        <header class="post-header">
+          <p class="featured-kicker">${esc(kindLabel)} · PUBLICADO EL ${esc(dateLabel)} · ${esc(post.readTime.toUpperCase())}</p>
+          <h1 class="post-title">${esc(post.title)}</h1>
+          ${post.excerpt ? `<p class="post-lead">${esc(post.excerpt)}</p>` : ''}
+          <div class="post-author">
+            <img src="assets/images/avatar.svg" alt="Erick" class="post-author-avatar" width="36" height="36">
+            <div>
+              <span class="post-author-name">Erick</span>
+              <span class="post-author-role">Estudiante de Ingeniería · Dev</span>
+            </div>
+            <div class="chip-list post-author-tags">
+              ${post.tags.map((t) => `<a class="tag ${tagClass(t)}" href="index.html?tag=${encodeURIComponent(t)}">${esc(t)}</a>`).join('')}
+            </div>
+          </div>
+        </header>
 
-  const authorAvatar = document.getElementById('article-author-avatar');
-  if (authorAvatar && post.author) authorAvatar.src = post.author.avatar;
+        <div class="prose" id="post-content">${html}</div>
 
-  const metaEl = document.getElementById('article-meta');
-  if (metaEl) {
-    metaEl.innerText = `Publicado el ${post.formattedDate} • ${post.readTime}`;
-  }
+        <aside class="repo-card">
+          <div class="repo-card-info">
+            <span class="repo-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+            </span>
+            <div>
+              <p class="repo-card-title">Z3K-Erick / DevBlog</p>
+              <p class="repo-card-text">Repositorio con el código del maquetado y avances del proyecto</p>
+            </div>
+          </div>
+          <a class="btn btn-secondary btn-sm" href="${REPO_URL}" target="_blank" rel="noopener noreferrer">↗ Ver en GitHub</a>
+        </aside>
 
-  // Inyectar contenido
-  const bodyEl = document.getElementById('article-content-body');
-  if (bodyEl) {
-    bodyEl.innerHTML = post.content;
-  }
+        <footer class="post-footer">
+          <a href="index.html" class="back-link" style="margin:0;">← Volver al feed principal</a>
+          <a href="#top" class="btn btn-secondary btn-sm">↑ Volver arriba</a>
+        </footer>
+      </article>
 
-  // Generar Tabla de Contenidos (TOC) y activar ScrollSpy
-  initTOC();
+      <aside class="post-aside">
+        ${
+          headings.length
+            ? `<nav class="toc" aria-label="En este artículo">
+                <p class="aside-title">En este artículo</p>
+                <ol class="toc-list">
+                  ${headings.map((h, i) => `<li><a class="toc-link${i === 0 ? ' is-active' : ''}" href="#${h.id}">${esc(h.text)}</a></li>`).join('')}
+                </ol>
+              </nav>`
+            : ''
+        }
+        <div class="aside-block">
+          <p class="aside-title">Sobre este post</p>
+          <p class="aside-note">Documentación de avances, diseño de componentes y pruebas en el proyecto.</p>
+          <button type="button" class="share-link" id="copy-post-link">↗ Compartir enlace</button>
+        </div>
+      </aside>
+    </div>`;
 
-  // Configurar botones de compartir
-  initShareButtons(post);
-}
-
-// Genera el TOC a partir de los encabezados h2 del artículo
-function initTOC() {
-  const headings = document.querySelectorAll('#article-content-body h2');
-  const tocNav = document.getElementById('toc-navigation');
-  if (!tocNav || headings.length === 0) return;
-
-  tocNav.innerHTML = '';
-  headings.forEach((h, index) => {
-    if (!h.id) {
-      h.id = `seccion-${index + 1}`;
+  document.getElementById('copy-post-link')?.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast('Enlace copiado al portapapeles', 'success');
+    } catch {
+      toast('No se pudo copiar el enlace', 'error');
     }
-
-    const link = document.createElement('a');
-    link.href = `#${h.id}`;
-    link.className = 'toc-link';
-    link.innerText = h.innerText;
-    tocNav.appendChild(link);
   });
 
-  // ScrollSpy con IntersectionObserver
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const id = entry.target.id;
-        document.querySelectorAll('.toc-link').forEach(link => {
-          link.classList.toggle('active', link.getAttribute('href') === `#${id}`);
+  const links = [...document.querySelectorAll('.toc-link')];
+  if (links.length && 'IntersectionObserver' in window) {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          links.forEach((l) => l.classList.toggle('is-active', l.getAttribute('href') === `#${entry.target.id}`));
         });
-      }
-    });
-  }, {
-    rootMargin: '-80px 0px -60% 0px'
-  });
-
-  headings.forEach(h => observer.observe(h));
-}
-
-// Copiar código del bloque al portapapeles
-function copyCode(button) {
-  const container = button.closest('.code-block-container');
-  if (!container) return;
-
-  const code = container.querySelector('code');
-  if (!code) return;
-
-  navigator.clipboard.writeText(code.innerText).then(() => {
-    const originalText = button.querySelector('span').innerText;
-    button.querySelector('span').innerText = '¡Copiado!';
-    button.style.borderColor = 'var(--accent-emerald)';
-    button.style.color = 'var(--accent-emerald)';
-
-    showToast('Código copiado al portapapeles', 'success');
-
-    setTimeout(() => {
-      button.querySelector('span').innerText = originalText;
-      button.style.borderColor = '';
-      button.style.color = '';
-    }, 2000);
-  }).catch(() => {
-    showToast('No se pudo copiar el código', 'error');
-  });
-}
-
-window.copyCode = copyCode;
-
-// Botones de compartir
-function initShareButtons(post) {
-  const currentUrl = encodeURIComponent(window.location.href);
-  const title = encodeURIComponent(post.title);
-
-  // Botón copiar enlace
-  const btnCopyLink = document.getElementById('share-btn-copy');
-  if (btnCopyLink) {
-    btnCopyLink.addEventListener('click', () => {
-      navigator.clipboard.writeText(window.location.href).then(() => {
-        showToast('Enlace copiado al portapapeles', 'success');
-      });
+      },
+      { rootMargin: '-80px 0px -65% 0px' }
+    );
+    headings.forEach((h) => {
+      const el = document.getElementById(h.id);
+      if (el) observer.observe(el);
     });
   }
-
-  // Twitter
-  const btnTwitter = document.getElementById('share-btn-twitter');
-  if (btnTwitter) {
-    btnTwitter.href = `https://twitter.com/intent/tweet?url=${currentUrl}&text=${title}`;
-  }
-
-  // LinkedIn
-  const btnLinkedin = document.getElementById('share-btn-linkedin');
-  if (btnLinkedin) {
-    btnLinkedin.href = `https://www.linkedin.com/sharing/share-offsite/?url=${currentUrl}`;
-  }
-}
+})();

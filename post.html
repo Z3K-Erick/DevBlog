@@ -3,185 +3,69 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>De Figma a React: construyendo mi primer tablero Kanban — DevBlog</title>
+  <title>Lectura de post — {EG} DevBlog</title>
   <link rel="icon" type="image/svg+xml" href="assets/images/logo.svg">
-  
-  <!-- Estilos del Sistema de Diseño -->
   <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/blog.css">
 </head>
-<body>
+<body data-page="post" id="top">
 
-  <!-- ==========================================================================
-       HEADER
-       ========================================================================== -->
+  <!-- ========================================================================
+       HEADER PÚBLICO
+       ======================================================================== -->
   <header class="site-header">
     <div class="container header-inner">
-      <a href="index.html" class="brand-logo">
-        <img src="assets/images/logo.svg" alt="DevBlog Logo" class="brand-icon">
-        <span class="brand-name">Dev<span class="brand-dot">Blog</span></span>
+      <a href="index.html" class="logo" aria-label="Inicio DevBlog">
+        <span class="logo-brace">{</span><span class="logo-letters">EG</span><span class="logo-brace">}</span>
       </a>
 
-      <div class="header-search">
-        <div class="search-input-wrapper">
-          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="8"></circle>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-          </svg>
-          <input type="text" class="search-input" placeholder="Buscar en el blog...">
-        </div>
-      </div>
-
-      <nav class="header-nav">
-        <a href="index.html" class="nav-link">Inicio</a>
-        <a href="index.html#articulos" class="nav-link active">Artículos</a>
+      <nav class="main-nav" aria-label="Principal">
+        <a href="index.html" class="nav-link">Mi blog</a>
+        <a href="index.html#feed" class="nav-link is-active">Posts</a>
         <a href="index.html#sobre-mi" class="nav-link">Sobre mí</a>
       </nav>
 
-      <div class="nav-cta">
-        <a href="admin.html" class="btn btn-secondary btn-sm">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="7" height="7"></rect>
-            <rect x="14" y="3" width="7" height="7"></rect>
-            <rect x="14" y="14" width="7" height="7"></rect>
-            <rect x="3" y="14" width="7" height="7"></rect>
+      <div class="header-actions">
+        <form class="header-search" id="header-search" role="search">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="m20 20-3.5-3.5"></path>
           </svg>
-          <span>Gestor</span>
-        </a>
-        <a href="editor.html" class="btn btn-primary btn-sm">
-          + Escribir
-        </a>
-      </div>
+          <input type="search" placeholder="Buscar post, tema..." aria-label="Buscar publicaciones">
+        </form>
 
-      <button class="mobile-menu-btn" aria-label="Abrir menú">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="3" y1="12" x2="21" y2="12"></line>
-          <line x1="3" y1="6" x2="21" y2="6"></line>
-          <line x1="3" y1="18" x2="21" y2="18"></line>
-        </svg>
-      </button>
+        <!-- Botón invisible al lado de la foto de perfil -->
+        <button type="button" class="secret-login-btn" id="secret-login-btn" aria-label="Acceso administrador"></button>
+
+        <!-- Foto de perfil circular -->
+        <button type="button" class="avatar-btn" id="avatar-btn" aria-label="Perfil de autor">
+          <img src="assets/images/avatar.svg" alt="Foto de perfil">
+        </button>
+      </div>
     </div>
   </header>
 
-  <!-- ==========================================================================
-       VISTA DETALLADA DEL ARTÍCULO
-       ========================================================================== -->
-  <main class="container" style="padding-top: 2.5rem;">
-    <!-- Enlace Volver -->
-    <a href="index.html" class="back-link">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="19" y1="12" x2="5" y2="12"></line>
-        <polyline points="12 19 5 12 12 5"></polyline>
-      </svg>
-      <span>Volver a todas las publicaciones</span>
-    </a>
+  <!-- ========================================================================
+       CONTENIDO DEL ARTÍCULO (EL HILO)
+       ======================================================================== -->
+  <main class="container post-page" id="post-root"></main>
 
-    <div class="post-detail-layout">
-      <!-- Columna Principal del Artículo -->
-      <article class="article-container">
-        <!-- Cabecera del Post -->
-        <header class="article-header">
-          <div class="article-tags" id="article-tags">
-            <!-- Tags cargados por JS -->
-          </div>
-
-          <h1 class="article-title" id="article-title">
-            Cargando artículo...
-          </h1>
-
-          <div class="article-author-row">
-            <img src="assets/images/avatar.svg" alt="Avatar Autor" class="article-author-avatar" id="article-author-avatar">
-            <div class="article-author-info">
-              <span class="article-author-name" id="article-author-name">Erick</span>
-              <span class="article-author-meta" id="article-meta">12 Oct 2024 • 8 min de lectura</span>
-            </div>
-          </div>
-        </header>
-
-        <!-- Contenido Completo del Artículo -->
-        <div class="article-body" id="article-content-body">
-          <!-- Inyectado por JS desde BlogStore -->
-        </div>
-
-        <!-- Pie del Artículo: Etiquetas y autor bio -->
-        <footer style="margin-top: 3.5rem; padding-top: 2rem; border-top: 1px solid var(--border-color);">
-          <div class="card" style="display: flex; gap: 1.25rem; align-items: center; background-color: var(--bg-surface);">
-            <img src="assets/images/avatar.svg" alt="Erick" style="width: 60px; height: 60px; border-radius: 50%;">
-            <div>
-              <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.25rem;">Escrito por Erick</h4>
-              <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; margin: 0;">
-                Desarrollador Frontend. Documentando el proceso de diseño y código para crear aplicaciones web limpias y escalables.
-              </p>
-            </div>
-          </div>
-        </footer>
-      </article>
-
-      <!-- Sidebar Flotante: Tabla de Contenidos & Compartir -->
-      <aside class="post-sidebar">
-        <!-- Tabla de Contenidos (TOC) -->
-        <div class="card toc-card">
-          <h3 class="toc-title">En este artículo</h3>
-          <nav class="toc-nav" id="toc-navigation">
-            <!-- Inyectado dinámicamente por post.js -->
-          </nav>
-        </div>
-
-        <!-- Compartir Artículo -->
-        <div class="card share-card">
-          <h3 class="toc-title">Compartir</h3>
-          <div class="share-buttons">
-            <button class="btn btn-secondary btn-sm" id="share-btn-copy" title="Copiar enlace" style="flex: 1;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-              </svg>
-              <span>Copiar</span>
-            </button>
-            <a href="#" target="_blank" rel="noopener" class="btn btn-secondary btn-sm btn-icon" id="share-btn-twitter" title="Twitter / X">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-              </svg>
-            </a>
-            <a href="#" target="_blank" rel="noopener" class="btn btn-secondary btn-sm btn-icon" id="share-btn-linkedin" title="LinkedIn">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
-                <rect x="2" y="9" width="4" height="12"></rect>
-                <circle cx="4" cy="4" r="2"></circle>
-              </svg>
-            </a>
-          </div>
-        </div>
-      </aside>
-    </div>
-  </main>
-
-  <!-- ==========================================================================
+  <!-- ========================================================================
        FOOTER
-       ========================================================================== -->
+       ======================================================================== -->
   <footer class="site-footer">
     <div class="container footer-inner">
-      <div class="footer-top">
-        <div class="footer-brand">
-          <img src="assets/images/logo.svg" alt="DevBlog Logo" width="24" height="24">
-          <span>DevBlog</span>
-        </div>
-        <div class="footer-links">
-          <a href="index.html">Inicio</a>
-          <a href="admin.html">Gestor</a>
-          <a href="editor.html">Nueva Publicación</a>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <span>© 2024 DevBlog. Diseñado para aprender y compartir.</span>
+      <span>© 2026 DevBlog · Hecho por Erick</span>
+      <div class="footer-links">
+        <a href="https://github.com/Z3K-Erick/DevBlog" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a href="#top">Volver arriba ↑</a>
       </div>
     </div>
   </footer>
 
-  <!-- Scripts -->
   <script src="js/store.js"></script>
-  <script src="js/main.js"></script>
+  <script src="js/markdown.js"></script>
+  <script src="js/ui.js"></script>
   <script src="js/post.js"></script>
 </body>
 </html>

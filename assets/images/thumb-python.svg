@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 220" width="100%" height="100%" fill="none">
+  <rect width="320" height="220" rx="12" fill="#131c31"/>
+  <rect x="1" y="1" width="318" height="218" rx="11" stroke="#26334d"/>
+  <circle cx="28" cy="28" r="4.5" fill="#ef4444"/>
+  <circle cx="42" cy="28" r="4.5" fill="#f59e0b"/>
+  <circle cx="56" cy="28" r="4.5" fill="#22c55e"/>
+  <text x="24" y="56" fill="#94a3b8" font-family="JetBrains Mono, Consolas, monospace" font-size="11">fastapi — uvicorn</text>
+  <rect x="24" y="68" width="76" height="20" rx="10" fill="#052e2b" stroke="#10b981" stroke-opacity="0.4"/>
+  <circle cx="36" cy="78" r="3.5" fill="#10b981"/>
+  <text x="46" y="82" fill="#34d399" font-family="JetBrains Mono, Consolas, monospace" font-size="10" font-weight="600">200 OK</text>
+  <text x="24" y="114" fill="#94a3b8" font-family="JetBrains Mono, Consolas, monospace" font-size="12">GET /posts</text>
+  <text x="230" y="114" fill="#34d399" font-family="JetBrains Mono, Consolas, monospace" font-size="12">200</text>
+  <text x="24" y="136" fill="#94a3b8" font-family="JetBrains Mono, Consolas, monospace" font-size="12">POST /posts</text>
+  <text x="230" y="136" fill="#38bdf8" font-family="JetBrains Mono, Consolas, monospace" font-size="12">201</text>
+  <text x="24" y="158" fill="#94a3b8" font-family="JetBrains Mono, Consolas, monospace" font-size="12">DELETE /posts</text>
+  <text x="230" y="158" fill="#fbbf24" font-family="JetBrains Mono, Consolas, monospace" font-size="12">204</text>
+  <text x="24" y="192" fill="#64748b" font-family="JetBrains Mono, Consolas, monospace" font-size="11">localhost:8000/docs</text>
+</svg>

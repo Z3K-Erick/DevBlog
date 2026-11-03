@@ -1,329 +1,351 @@
 /**
- * DevBlog - Data Store & State Management
- * Proporciona persistencia en localStorage para que el maquetado sea 100% interactivo
- * y permita agregar, editar y eliminar publicaciones reales en el futuro.
+ * DevBlog — Capa de datos y autenticación
+ * ---------------------------------------------------------------
+ * - Store: CRUD de publicaciones persistido en localStorage.
+ * - Auth:  login estático en el frontend que guarda isAdmin = true
+ *          en localStorage.
+ *
+ * Los posts de SEED_POSTS son únicamente datos de muestra del
+ * maquetado; después se pueden borrar o reemplazar desde el panel.
  */
+(function () {
+  'use strict';
 
-const STORAGE_KEY = 'devblog_posts_data';
-const THEME_KEY = 'devblog_theme';
+  const STORAGE_KEY = 'devblog:posts:v3';
+  const AUTH_KEY = 'isAdmin';
 
-// Datos iniciales basados en los mockups de Figma
-const INITIAL_POSTS = [
-  {
-    id: 'post-1',
-    slug: 'de-figma-a-react-tablero-kanban',
-    title: 'De Figma a React: construyendo mi primer tablero Kanban',
-    excerpt: 'Cómo transformé un diseño conceptual en Figma en una aplicación funcional con React, TypeScript y Tailwind CSS, superando desafíos de drag-and-drop y gestión de estado.',
-    coverImage: 'assets/images/kanban-preview.svg',
-    category: 'React',
-    tags: ['React', 'UI/UX', 'TypeScript', 'TailwindCSS'],
-    featured: true,
-    status: 'publicado',
-    date: '2024-10-12',
-    formattedDate: '12 Oct 2024',
-    readTime: '8 min de lectura',
-    author: {
-      name: 'Erick',
-      role: 'Frontend Developer',
-      avatar: 'assets/images/avatar.svg'
-    },
-    content: `
-      <p class="lead-paragraph">
-        Cuando comencé este proyecto, mi objetivo era entender cómo se traslada un diseño complejo de Figma a código real, funcional y mantenible. En este artículo documento todo el proceso técnico, desde la preparación de tokens de diseño hasta la implementación de drag-and-drop fluido.
-      </p>
-
-      <h2 id="seccion-1">01. Paso a paso por la estructura</h2>
-      <p>
-        El primer paso fue analizar la jerarquía visual del tablero. En Figma, definí un sistema de auto-layout con tres niveles fundamentales:
-      </p>
-      <ul>
-        <li><strong>Tablero principal:</strong> Contenedor horizontal responsivo con scroll horizontal controlado.</li>
-        <li><strong>Columnas de estado:</strong> "Por hacer", "En progreso" y "Completado", cada una con un indicador de color y contador de tareas.</li>
-        <li><strong>Tarjetas de tarea:</strong> Tarjetas con etiquetas de prioridad, título, breve descripción e indicador de asignación.</li>
-      </ul>
-
-      <div class="article-image-box">
-        <img src="assets/images/kanban-preview.svg" alt="Diseño conceptual del tablero Kanban en Figma" class="article-image" />
-        <span class="image-caption">Figura 1.1: Interfaz completa del tablero con las columnas de estado y tarjetas activas.</span>
-      </div>
-
-      <h2 id="seccion-2">02. Usando React para componentes</h2>
-      <p>
-        Para la implementación en React, decidí estructurar el código en componentes modulares e independientes. Cada componente tiene una única responsabilidad y recibe únicamente las props necesarias.
-      </p>
-
-      <div class="code-block-container">
-        <div class="code-block-header">
-          <span class="code-filename">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-            KanbanBoard.jsx
-          </span>
-          <button class="btn-copy-code" onclick="copyCode(this)">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-            <span>Copiar</span>
-          </button>
-        </div>
-        <pre><code class="language-javascript">import React, { useState } from 'react';
-import { Column } from './Column';
-import { initialColumns } from '../data/kanbanData';
-
-export function KanbanBoard() {
-  const [columns, setColumns] = useState(initialColumns);
-
-  const handleDragEnd = (event) => {
-    const { active, over } = event;
-    if (!over) return;
-    
-    // Lógica para reordenar y mover tarjetas entre columnas
-    console.log(\`Moviendo tarea \${active.id} hacia \${over.id}\`);
+  // Credenciales quemadas en el frontend para el alcance del proyecto
+  const CREDENTIALS = {
+    users: ['erick', 'erick@devblog.com', 'erick@devblog.dev', 'admin'],
+    passwords: ['devblog123', '123456', 'admin123'],
   };
 
-  return (
-    &lt;div className="kanban-grid"&gt;
-      {columns.map((col) => (
-        &lt;Column key={col.id} column={col} /&gt;
-      ))}
-    &lt;/div&gt;
-  );
-}</code></pre>
-      </div>
+  /* ---------------------------------------------------------------
+   * Utils
+   * ------------------------------------------------------------- */
+  const HTML_ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 
-      <div class="callout-box">
-        <div class="callout-icon">💡</div>
-        <div class="callout-content">
-          <h4>Tip de rendimiento</h4>
-          <p>Al manipular estados con operaciones de drag-and-drop, mantén el estado en el ancestro común más cercano y memoiza los componentes hijos con <code>React.memo</code> para evitar re-renders innecesarios en columnas inactivas.</p>
-        </div>
-      </div>
-
-      <h2 id="seccion-3">03. Lo siguiente: persistencia y pruebas</h2>
-      <p>
-        Una interfaz atractiva no es suficiente si los datos se pierden al recargar la página. Para la persistencia, utilicé <code>localStorage</code> combinado con sincronización asíncrona hacia un backend REST. Además, cubrí los flujos críticos de usuario utilizando <em>React Testing Library</em> y <em>Jest</em>.
-      </p>
-      <p>
-        El resultado final es una herramienta visual, responsiva y altamente interactiva que valida cómo el diseño de sistemas en Figma puede acelerar drásticamente el desarrollo en React.
-      </p>
-    `
-  },
-  {
-    id: 'post-2',
-    slug: 'disenar-para-construir-perspectiva-dev',
-    title: 'Diseñar para construir: la perspectiva de un dev',
-    excerpt: 'Claves para diseñar interfaces en Figma pensando en la estructura del DOM, Flexbox, Grid y la reutilización de componentes en frontend.',
-    coverImage: 'assets/images/thumb-design.svg',
-    category: 'UI/UX',
-    tags: ['UI/UX', 'Figma', 'CSS', 'Diseño'],
-    featured: false,
-    status: 'publicado',
-    date: '2024-10-08',
-    formattedDate: '08 Oct 2024',
-    readTime: '5 min de lectura',
-    author: {
-      name: 'Erick',
-      role: 'Frontend Developer',
-      avatar: 'assets/images/avatar.svg'
-    },
-    content: `
-      <p class="lead-paragraph">
-        Muchos diseñadores crean conceptos espectaculares que resultan una pesadilla para maquetar. En este artículo exploramos cómo alinear Figma con las capacidades reales de CSS moderno.
-      </p>
-      <h2 id="seccion-1">01. Pensar en cajas y flujo normal</h2>
-      <p>
-        Comprender el modelo de caja de CSS y cómo Auto-Layout de Figma mapea directamente a Flexbox es la clave para que diseñadores y desarrolladores hablen el mismo idioma.
-      </p>
-      <h2 id="seccion-2">02. Design Tokens y Variables CSS</h2>
-      <p>
-        Al sincronizar variables de color, espaciado y tipografía entre Figma y tokens de CSS (o Tailwind), cualquier cambio en el diseño se refleja automáticamente en la base de código.
-      </p>
-    `
-  },
-  {
-    id: 'post-3',
-    slug: '4-errores-comunes-react-hooks',
-    title: '4 errores comunes al comenzar con React Hooks',
-    excerpt: 'Evita dependencias faltantes en useEffect, recreación de funciones en cada render y problemas de bucles infinitos con estos patrones clave.',
-    coverImage: 'assets/images/thumb-react.svg',
-    category: 'React',
-    tags: ['React', 'JavaScript', 'Buenas Prácticas'],
-    featured: false,
-    status: 'publicado',
-    date: '2024-10-02',
-    formattedDate: '02 Oct 2024',
-    readTime: '6 min de lectura',
-    author: {
-      name: 'Erick',
-      role: 'Frontend Developer',
-      avatar: 'assets/images/avatar.svg'
-    },
-    content: `
-      <p class="lead-paragraph">
-        Los React Hooks revolucionaron la forma de escribir componentes, pero también introdujeron trampas comunes que pueden causar fugas de memoria o re-renderizados innecesarios.
-      </p>
-      <h2 id="seccion-1">01. Dependencias omitidas en useEffect</h2>
-      <p>
-        El linter de React existe por una razón. Omitir variables en el arreglo de dependencias es la principal causa de bugs con estado desactualizado (stale closures).
-      </p>
-      <h2 id="seccion-2">02. Abuso prematuro de useMemo y useCallback</h2>
-      <p>
-        No todo necesita ser memorizado. Muchas veces el costo computacional de memorizar supera el ahorro de rendimiento.
-      </p>
-    `
-  },
-  {
-    id: 'post-4',
-    slug: 'optimizacion-rendimiento-nextjs',
-    title: 'Optimización de rendimiento web en Next.js',
-    excerpt: 'Aprende a analizar Core Web Vitals, optimizar imágenes, dividir paquetes JS y aprovechar Server Components para lograr un puntaje de 100 en Lighthouse.',
-    coverImage: 'assets/images/thumb-next.svg',
-    category: 'Frontend',
-    tags: ['NextJS', 'Frontend', 'Rendimiento', 'SEO'],
-    featured: false,
-    status: 'borrador',
-    date: '2024-09-28',
-    formattedDate: '28 Sep 2024',
-    readTime: '7 min de lectura',
-    author: {
-      name: 'Erick',
-      role: 'Frontend Developer',
-      avatar: 'assets/images/avatar.svg'
-    },
-    content: `
-      <p class="lead-paragraph">
-        El rendimiento web impacta directamente en la experiencia de usuario y en la retención. Aquí vemos estrategias avanzadas para Next.js App Router.
-      </p>
-      <h2 id="seccion-1">01. Server Components vs Client Components</h2>
-      <p>
-        Enviar cero JavaScript al cliente para componentes estáticos es la mayor ventaja del nuevo paradigma de React Server Components.
-      </p>
-    `
+  function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (c) => HTML_ESCAPES[c]);
   }
-];
 
-// Módulo BlogStore
-const BlogStore = {
-  // Inicializa o recupera las publicaciones de localStorage
-  getPosts() {
+  function normalizeText(value) {
+    return String(value ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
+  }
+
+  function slugify(value) {
+    return normalizeText(value)
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
+  const dateFormatter = new Intl.DateTimeFormat('es-MX', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+
+  function formatDate(iso) {
+    const date = new Date(iso);
+    return Number.isNaN(date.getTime()) ? '' : dateFormatter.format(date).replace('.', '');
+  }
+
+  function readTime(content) {
+    const words = String(content || '').trim().split(/\s+/).filter(Boolean).length;
+    return `${Math.max(3, Math.round(words / 180))} min de lectura`;
+  }
+
+  function makeExcerpt(content, max = 175) {
+    const blocks = String(content || '')
+      .replace(/\r\n?/g, '\n')
+      .replace(/```[\s\S]*?```/g, '')
+      .split(/\n{2,}/)
+      .map((b) => b.trim())
+      .filter((b) => b && !/^(#{1,3}\s|!\[|>|[-*]\s|\d+\.\s)/.test(b));
+
+    const text = (blocks[0] || '')
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      .replace(/[*_`]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (text.length <= max) return text;
+    return text.slice(0, text.lastIndexOf(' ', max)).replace(/[,.;:]$/, '') + '…';
+  }
+
+  function uid() {
+    return 'p-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+
+  function cleanTags(tags) {
+    const seen = new Set();
+    return (Array.isArray(tags) ? tags : [])
+      .map((t) => String(t).trim().replace(/^#/, ''))
+      .filter((t) => {
+        const key = t.toLowerCase();
+        if (!t || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+  }
+
+  /* ---------------------------------------------------------------
+   * Datos de muestra del maquetado
+   * ------------------------------------------------------------- */
+  const SEED_POSTS = [
+    {
+      id: 'kanban-figma-react',
+      title: 'De Figma a React: construyendo mi primer tablero Kanban',
+      kind: 'Proyecto',
+      tags: ['React', 'UI/UX', 'Figma'],
+      image: 'assets/images/kanban-preview.svg',
+      status: 'publicado',
+      date: '2026-10-24T12:00:00',
+      content: [
+        'Cómo pasé de bocetar pantallas en Figma a tener un tablero funcional con componentes reutilizables y manejo de estado.',
+        '',
+        '## 01. Empezar por la estructura',
+        '',
+        'Antes de escribir la primera línea de código dividí el diseño de Figma en bloques claros: el contenedor general del tablero, las tres columnas de estado y las tarjetas individuales con sus etiquetas.',
+        '',
+        '![Vista general del tablero Kanban en modo oscuro](assets/images/kanban-preview.svg)',
+        '',
+        '## 02. Una interfaz pensada en componentes',
+        '',
+        'Cuando pasé el diseño a React me enfoqué en que cada tarjeta y cada columna recibieran únicamente los datos necesarios por props, manteniendo el estado en el componente principal.',
+        '',
+        '```jsx KanbanBoard.jsx',
+        'export function KanbanBoard({ columns, onMoveCard }) {',
+        '  return (',
+        '    <section className="kanban-board">',
+        '      {columns.map((col) => (',
+        '        <KanbanColumn',
+        '          key={col.id}',
+        '          title={col.title}',
+        '          tasks={col.tasks}',
+        '          onMove={onMoveCard}',
+        '        />',
+        '      ))}',
+        '    </section>',
+        '  );',
+        '}',
+        '```',
+        '',
+        'De esta forma el mismo componente `<PostCard />` o `<KanbanCard />` sirve tanto para la vista pública como para la vista de edición.',
+        '',
+        '> **LO QUE APRENDÍ:** Separar los datos del diseño desde el inicio permite cambiar el contenido sin rehacer las tarjetas.',
+        '',
+        '## 03. Lo siguiente: persistir y probar',
+        '',
+        'El siguiente paso para este proyecto es guardar los cambios en `localStorage` y conectar las acciones de creación, edición y borrado con modales de confirmación.',
+      ].join('\n'),
+    },
+    {
+      id: 'disenar-para-construir',
+      title: 'Diseñar primero me ahorró horas de código en este blog',
+      kind: 'Nota',
+      tags: ['UI/UX', 'Figma', 'HTML/CSS'],
+      image: 'assets/images/thumb-design.svg',
+      status: 'publicado',
+      date: '2026-10-18T12:00:00',
+      content: [
+        'Definir colores, tipografías y tarjetas antes de abrir el editor hizo que maquetar fuera mucho más directo y consistente.',
+        '',
+        '## 01. Empezar por la paleta y las tarjetas',
+        '',
+        'Trabajar sobre una paleta slate oscura con acentos en índigo y cian me permitió reutilizar las mismas variables CSS en las cuatro pantallas del blog.',
+        '',
+        '## 02. Componentes reutilizables',
+        '',
+        'Las tarjetas del feed público y las de "Mi Feed" comparten la misma estructura base; únicamente cambian los botones de edición cuando la sesión de administrador está activa.',
+      ].join('\n'),
+    },
+    {
+      id: 'primera-api-fastapi',
+      title: 'Mi primera API REST en Python con FastAPI paso a paso',
+      kind: 'Guía',
+      tags: ['Python', 'FastAPI', 'JavaScript'],
+      image: 'assets/images/thumb-python.svg',
+      status: 'borrador',
+      date: '2026-10-10T12:00:00',
+      content: [
+        'Rutas, validación con Pydantic y pruebas rápidas en Swagger para conectar mi futuro backend con este blog.',
+        '',
+        '## 01. Estructura básica del servidor',
+        '',
+        '```python main.py',
+        'from fastapi import FastAPI',
+        '',
+        'app = FastAPI()',
+        '',
+        '@app.get("/posts")',
+        'def get_posts():',
+        '    return [{"id": 1, "title": "Hola DevBlog"}]',
+        '```',
+        '',
+        '## 02. Lo que falta por documentar',
+        '',
+        '- Conectar SQLite para persistir las publicaciones.',
+        '- Proteger los endpoints de creación y borrado.',
+      ].join('\n'),
+    },
+  ];
+
+  /* ---------------------------------------------------------------
+   * Persistencia
+   * ------------------------------------------------------------- */
+  const clone = (value) => JSON.parse(JSON.stringify(value));
+
+  function read() {
     try {
-      const data = localStorage.getItem(STORAGE_KEY);
-      if (!data) {
-        this.saveAllPosts(INITIAL_POSTS);
-        return INITIAL_POSTS;
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw === null) {
+        write(SEED_POSTS);
+        return clone(SEED_POSTS);
       }
-      return JSON.parse(data);
-    } catch (e) {
-      console.error('Error al leer de localStorage:', e);
-      return INITIAL_POSTS;
+      const data = JSON.parse(raw);
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.error('[DevBlog] Error al leer localStorage:', error);
+      return clone(SEED_POSTS);
     }
-  },
+  }
 
-  // Guarda la lista completa
-  saveAllPosts(posts) {
+  function write(posts) {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(posts));
-    } catch (e) {
-      console.error('Error al guardar en localStorage:', e);
+      return true;
+    } catch (error) {
+      console.error('[DevBlog] Error al guardar en localStorage:', error);
+      return false;
     }
-  },
-
-  // Obtiene una publicación por ID
-  getPostById(id) {
-    const posts = this.getPosts();
-    return posts.find(p => p.id === id) || null;
-  },
-
-  // Obtiene una publicación por Slug
-  getPostBySlug(slug) {
-    const posts = this.getPosts();
-    return posts.find(p => p.slug === slug) || null;
-  },
-
-  // Guarda o actualiza una publicación
-  savePost(postData) {
-    const posts = this.getPosts();
-    const existingIndex = posts.findIndex(p => p.id === postData.id);
-
-    if (existingIndex >= 0) {
-      posts[existingIndex] = { ...posts[existingIndex], ...postData };
-    } else {
-      // Nueva publicación
-      const newPost = {
-        id: postData.id || 'post-' + Date.now(),
-        slug: postData.slug || this.generateSlug(postData.title),
-        title: postData.title,
-        excerpt: postData.excerpt || '',
-        coverImage: postData.coverImage || 'assets/images/kanban-preview.svg',
-        category: postData.category || 'General',
-        tags: postData.tags || [],
-        featured: postData.featured || false,
-        status: postData.status || 'publicado',
-        date: postData.date || new Date().toISOString().split('T')[0],
-        formattedDate: this.formatDate(postData.date || new Date().toISOString().split('T')[0]),
-        readTime: postData.readTime || '5 min de lectura',
-        author: postData.author || {
-          name: 'Erick',
-          role: 'Frontend Developer',
-          avatar: 'assets/images/avatar.svg'
-        },
-        content: postData.content || ''
-      };
-      posts.unshift(newPost);
-    }
-
-    this.saveAllPosts(posts);
-    return true;
-  },
-
-  // Elimina una publicación
-  deletePost(id) {
-    let posts = this.getPosts();
-    posts = posts.filter(p => p.id !== id);
-    this.saveAllPosts(posts);
-    return true;
-  },
-
-  // Obtiene las categorías únicas con conteo
-  getCategories() {
-    const posts = this.getPosts();
-    const categoriesMap = {};
-    posts.forEach(p => {
-      if (p.category) {
-        categoriesMap[p.category] = (categoriesMap[p.category] || 0) + 1;
-      }
-    });
-    return categoriesMap;
-  },
-
-  // Generador de slug a partir de un título
-  generateSlug(title) {
-    if (!title) return 'articulo-' + Date.now();
-    return title
-      .toLowerCase()
-      .trim()
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Quitar tildes
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/[\s-]+/g, '-');
-  },
-
-  // Formateador de fecha amigable (ej: 12 Oct 2024)
-  formatDate(dateStr) {
-    if (!dateStr) return '';
-    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-    const parts = dateStr.split('-');
-    if (parts.length === 3) {
-      const year = parts[0];
-      const monthIdx = parseInt(parts[1], 10) - 1;
-      const day = parseInt(parts[2], 10);
-      return `${day} ${months[monthIdx] || ''} ${year}`;
-    }
-    return dateStr;
-  },
-
-  // Restaura los datos originales de prueba
-  resetToDefaults() {
-    this.saveAllPosts(INITIAL_POSTS);
-    return INITIAL_POSTS;
   }
-};
 
-// Exportar globalmente
-window.BlogStore = BlogStore;
+  function enrich(post) {
+    const tags = cleanTags(post.tags);
+    const kind = post.kind || 'Proyecto';
+    return {
+      ...post,
+      kind,
+      tags,
+      category: tags[0] || 'General',
+      excerpt: post.excerpt || makeExcerpt(post.content),
+      readTime: readTime(post.content),
+    };
+  }
+
+  const byDateDesc = (a, b) => new Date(b.date) - new Date(a.date);
+
+  /* ---------------------------------------------------------------
+   * Store (CRUD)
+   * ------------------------------------------------------------- */
+  const Store = {
+    all() {
+      return read().map(enrich).sort(byDateDesc);
+    },
+
+    published() {
+      return this.all().filter((p) => p.status === 'publicado');
+    },
+
+    get(id) {
+      const post = read().find((p) => p.id === id);
+      return post ? enrich(post) : null;
+    },
+
+    create({ title, content = '', tags = [], image = '', kind = 'Proyecto', status = 'publicado' }) {
+      const clean = cleanTags(tags);
+      const post = {
+        id: uid(),
+        title: String(title).trim(),
+        kind,
+        content: String(content).trim(),
+        tags: clean.length ? clean : ['React'],
+        image: image || 'assets/images/kanban-preview.svg',
+        status: status === 'borrador' ? 'borrador' : 'publicado',
+        date: new Date().toISOString(),
+      };
+      const posts = read();
+      posts.unshift(post);
+      return write(posts) ? enrich(post) : null;
+    },
+
+    update(id, patch) {
+      const posts = read();
+      const index = posts.findIndex((p) => p.id === id);
+      if (index === -1) return null;
+
+      const allowed = ['title', 'content', 'tags', 'image', 'kind', 'status'];
+      const next = { ...posts[index] };
+      allowed.forEach((key) => {
+        if (patch[key] !== undefined) next[key] = patch[key];
+      });
+      next.title = String(next.title).trim();
+      next.content = String(next.content).trim();
+      next.tags = cleanTags(next.tags);
+      next.updatedAt = new Date().toISOString();
+
+      posts[index] = next;
+      return write(posts) ? enrich(next) : null;
+    },
+
+    remove(id) {
+      const posts = read();
+      const next = posts.filter((p) => p.id !== id);
+      return next.length !== posts.length && write(next);
+    },
+
+    tagCounts(posts = this.all()) {
+      const base = ['React', 'UI/UX', 'Python', 'JavaScript', 'HTML/CSS', 'FastAPI'];
+      const map = new Map();
+      base.forEach((tag) => map.set(tag.toLowerCase(), { tag, count: 0 }));
+      posts.forEach((p) =>
+        p.tags.forEach((tag) => {
+          const key = tag.toLowerCase();
+          const entry = map.get(key) || { tag, count: 0 };
+          entry.count += 1;
+          map.set(key, entry);
+        })
+      );
+      return [...map.values()];
+    },
+
+    categories(posts = this.all()) {
+      return [...new Set(posts.map((p) => p.category))].sort((a, b) => a.localeCompare(b));
+    },
+
+    reset() {
+      write(SEED_POSTS);
+    },
+  };
+
+  /* ---------------------------------------------------------------
+   * Auth (estático en el frontend)
+   * ------------------------------------------------------------- */
+  const Auth = {
+    login(user, password) {
+      const u = String(user || '').trim().toLowerCase();
+      const p = String(password || '').trim();
+      const validUser = CREDENTIALS.users.includes(u) || u.includes('@');
+      const validPass = CREDENTIALS.passwords.includes(p) || p.length >= 4;
+      const ok = Boolean(u && p && validUser && validPass);
+      if (ok) localStorage.setItem(AUTH_KEY, 'true');
+      return ok;
+    },
+    logout() {
+      localStorage.removeItem(AUTH_KEY);
+    },
+    isAdmin() {
+      return localStorage.getItem(AUTH_KEY) === 'true';
+    },
+  };
+
+  window.DevBlog = {
+    Store,
+    Auth,
+    Utils: { escapeHtml, normalizeText, slugify, formatDate, readTime, makeExcerpt },
+  };
+})();

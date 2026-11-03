@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi Feed — {EG} DevBlog</title>
+  <link rel="icon" type="image/svg+xml" href="assets/images/logo.svg">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/blog.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body data-page="dashboard">
+
+  <div class="dash-shell">
+    <!-- ======================================================================
+         MENÚ LATERAL DEL DASHBOARD PRIVADO
+         ====================================================================== -->
+    <aside class="dash-sidebar" aria-label="Panel de control">
+      <div class="dash-brand">
+        <a href="index.html" class="logo" aria-label="Inicio DevBlog">
+          <span class="logo-brace">{</span><span class="logo-letters">EG</span><span class="logo-brace">}</span>
+        </a>
+      </div>
+
+      <p class="dash-section-label">Panel de control</p>
+
+      <nav class="dash-nav" aria-label="Secciones del panel">
+        <button type="button" class="dash-nav-btn is-active" data-tab="mi-feed">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+          </svg>
+          <span>Mi Feed</span>
+        </button>
+
+        <button type="button" class="dash-nav-btn" data-tab="gestor">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M9 16h6"/>
+          </svg>
+          <span>Gestor de Publicaciones</span>
+        </button>
+      </nav>
+
+      <div class="dash-sidebar-bottom">
+        <a href="index.html" class="dash-visit-link">↗ Ver blog público</a>
+
+        <div class="dash-user">
+          <img src="assets/images/avatar.svg" alt="Erick">
+          <div>
+            <span class="dash-user-name">Erick</span>
+            <span class="dash-user-role">Admin</span>
+          </div>
+        </div>
+
+        <button type="button" class="dash-logout-btn" id="logout-btn">
+          Cerrar sesión
+          <span>Ver como visitante</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ======================================================================
+         ÁREA PRINCIPAL DEL DASHBOARD
+         ====================================================================== -->
+    <div class="dash-main">
+      <!-- Barra superior -->
+      <header class="dash-topbar">
+        <div class="dash-crumbs">
+          Dashboard &nbsp;/&nbsp; <strong id="dash-crumb">Mi Feed</strong>
+        </div>
+        <span class="dash-session">Sesión activa</span>
+      </header>
+
+      <main class="dash-content">
+        <!-- Encabezado dinámico según la pestaña activa -->
+        <div class="dash-header">
+          <div>
+            <h1 class="dash-title" id="dash-title">Mi Feed</h1>
+            <p class="dash-subtitle" id="dash-subtitle">
+              Tu muro privado para publicar avances rápidos y editar tus posts en caliente.
+            </p>
+          </div>
+          <button type="button" class="admin-mode-pill" id="header-action-btn">
+            Vista de Administrador
+          </button>
+        </div>
+
+        <!-- Selector de pestañas -->
+        <div class="dash-tabs" role="tablist" aria-label="Vistas del dashboard">
+          <button type="button" class="dash-tab is-active" role="tab" aria-selected="true" data-tab="mi-feed">
+            Mi Feed
+          </button>
+          <button type="button" class="dash-tab" role="tab" aria-selected="false" data-tab="gestor">
+            Gestor de Publicaciones
+          </button>
+        </div>
+
+        <!-- ==================================================================
+             PANTALLA 3: PESTAÑA "MI FEED" (CREACIÓN Y EDICIÓN EN CALIENTE)
+             ================================================================== -->
+        <section class="tab-panel" id="panel-mi-feed" aria-label="Mi Feed">
+
+          <!-- Caja de publicación rápida -->
+          <div class="composer-card">
+            <div class="composer-head">
+              <div>
+                <h2 class="composer-title">Crear nueva publicación</h2>
+                <p class="composer-sub">Comparte qué estás construyendo, agrega etiquetas o sube capturas</p>
+              </div>
+              <span class="composer-badge">Borrador local</span>
+            </div>
+
+            <form class="composer-body" id="composer" novalidate>
+              <div class="field">
+                <label class="label" for="composer-title">Título del post</label>
+                <input class="input" id="composer-title" name="title" placeholder="Ej: Construyendo mi primera API con FastAPI..." required>
+              </div>
+
+              <div class="field">
+                <label class="label" for="composer-content">¿Qué estás construyendo o aprendiendo hoy?</label>
+                <textarea class="input textarea" id="composer-content" name="content" rows="4" placeholder="Escribe el contenido de tu publicación, agrega bloques de código (```jsx) o explica tu avance..."></textarea>
+              </div>
+
+              <div class="field">
+                <label class="label">Etiquetas</label>
+                <div id="composer-tags"></div>
+              </div>
+
+              <div class="field">
+                <label class="label" for="composer-image-url">Imagen de portada (opcional)</label>
+                <div class="upload-row">
+                  <span class="upload-icon" aria-hidden="true">🖼</span>
+                  <input class="input" id="composer-image-url" name="imageUrl" placeholder="Subir imagen o pegar URL (ej. assets/images/kanban-preview.svg)">
+                  <label class="upload-trigger">
+                    Subir archivo
+                    <input type="file" id="composer-image-file" accept="image/*" class="visually-hidden">
+                  </label>
+                </div>
+              </div>
+
+              <div class="composer-foot">
+                <span class="form-hint">Se publica al instante en el feed principal</span>
+                <div class="composer-actions">
+                  <button type="button" class="btn btn-secondary btn-sm" id="composer-draft">
+                    Guardar como borrador
+                  </button>
+                  <button type="submit" class="btn btn-primary btn-sm">
+                    + Publicar avance
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Lista de publicaciones con edición en caliente -->
+          <div class="myfeed-head">
+            <h2 class="myfeed-title">Mi Feed</h2>
+            <span class="muted" id="my-posts-count">3 publicaciones</span>
+          </div>
+
+          <div class="feed-list" id="my-posts"></div>
+        </section>
+
+        <!-- ==================================================================
+             PANTALLA 4: PESTAÑA "GESTOR DE PUBLICACIONES" (TABLA)
+             ================================================================== -->
+        <section class="tab-panel" id="panel-gestor" aria-label="Gestor de Publicaciones" hidden>
+          <div class="table-card">
+            <div class="table-card-head">
+              <h2 class="table-card-title">Listado de publicaciones</h2>
+              <span class="muted" id="table-summary">3 en total</span>
+            </div>
+
+            <!-- Barra de búsqueda y filtros -->
+            <div class="table-filters">
+              <div class="table-search-wrap">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <circle cx="11" cy="11" r="7"></circle>
+                  <path d="m20 20-3.5-3.5"></path>
+                </svg>
+                <input type="search" id="table-search" class="input select--sm" placeholder="Buscar por título o tag...">
+              </div>
+
+              <select id="table-status" class="input select select--sm" aria-label="Filtrar por estado">
+                <option value="todos">Todos</option>
+                <option value="publicado">Publicados</option>
+                <option value="borrador">Borradores</option>
+              </select>
+
+              <select id="table-category" class="input select select--sm" aria-label="Filtrar por tipo">
+                <option value="todas">Categorías</option>
+                <option value="Proyecto">Proyecto</option>
+                <option value="Nota">Nota</option>
+                <option value="Guía">Guía</option>
+              </select>
+
+              <select id="table-sort" class="input select select--sm" aria-label="Ordenar por fecha">
+                <option value="recent">Recientes</option>
+                <option value="oldest">Antiguos</option>
+              </select>
+            </div>
+
+            <!-- Tabla de publicaciones -->
+            <div class="table-wrap">
+              <table class="posts-table">
+                <thead>
+                  <tr>
+                    <th>Título del post</th>
+                    <th>Categoría</th>
+                    <th>Fecha de creación</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="table-body"></tbody>
+              </table>
+
+              <div class="empty-state" id="table-empty" hidden>
+                <p class="empty-state-title">Sin coincidencias</p>
+                <p>No hay publicaciones que coincidan con el filtro actual.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="js/store.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>
