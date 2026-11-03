@@ -235,12 +235,15 @@
    * ------------------------------------------------------------- */
   function postCard(post, { variant = 'row', admin = false } = {}) {
     const url = `post.html?id=${encodeURIComponent(post.id)}`;
-    // Si la imagen es panorámica muy ancha (o post.layout === 'top'), va arriba;
-    // en caso contrario (como thumb-design.svg o capturas normales) va a un costado.
-    const autoVariant =
-      variant === 'featured' || post.layout === 'top' ? 'featured' : 'row';
+    // Si post.layout está definido ('side' o 'top'), se respeta fielmente.
+    // Si no está definido, se adapta de forma inteligente según la relación de aspecto.
+    const explicitLayout = post.layout === 'top' ? 'featured' : (post.layout === 'side' ? 'row' : null);
+    const autoVariant = explicitLayout || (variant === 'featured' ? 'featured' : 'row');
+    const onloadAttr = explicitLayout
+      ? ''
+      : `onload="if(!this.closest('.post-card--editing')&&this.naturalWidth&&this.naturalHeight){const feat=this.naturalWidth/this.naturalHeight>=1.9;this.closest('.post-card').classList.toggle('post-card--featured',feat);this.closest('.post-card').classList.toggle('post-card--row',!feat);}"`;
     const media = post.image
-      ? `<a class="post-card-media" href="${url}" tabindex="-1" aria-hidden="true"><img src="${esc(post.image)}" alt="" loading="lazy" onload="if(!this.closest('.post-card--editing')&&this.naturalWidth&&this.naturalHeight){this.closest('.post-card').classList.toggle('post-card--featured',this.naturalWidth/this.naturalHeight>=1.9);this.closest('.post-card').classList.toggle('post-card--row',this.naturalWidth/this.naturalHeight<1.9);}"></a>`
+      ? `<a class="post-card-media" href="${url}" tabindex="-1" aria-hidden="true"><img src="${esc(post.image)}" alt="" loading="lazy" ${onloadAttr}></a>`
       : '';
 
     const kindLabel = (post.kind || 'Proyecto').toUpperCase();

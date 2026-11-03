@@ -35,6 +35,8 @@
     tab: 'mi-feed',
     editingId: null,
     composerImage: '',
+    editCoverImage: '',
+    modalPendingImage: '',
     editTags: null,
     dashTechEditor: null,
     dashProjectsDraft: null,
@@ -92,12 +94,285 @@
   });
 
   /* ---------------------------------------------------------------
+   * Editor Visual Asistido: funciones y utilidades
+   * ------------------------------------------------------------- */
+  let activeTextareaForModal = null;
+  let savedCursorPos = null;
+
+  function insertFormatting(textarea, prefix, suffix, defaultText) {
+    if (!textarea) return;
+    textarea.focus();
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const val = textarea.value;
+    const selected = val.substring(start, end);
+    const insert = selected.length > 0 ? selected : defaultText;
+    const replacement = prefix + insert + suffix;
+
+    if (typeof textarea.setRangeText === 'function') {
+      textarea.setRangeText(replacement, start, end, 'select');
+      const newStart = start + prefix.length;
+      const newEnd = newStart + insert.length;
+      textarea.setSelectionRange(newStart, newEnd);
+    } else {
+      textarea.value = val.substring(0, start) + replacement + val.substring(end);
+    }
+
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  function initEditorShell(shellEl) {
+    if (!shellEl || shellEl.dataset.initialized) return;
+    shellEl.dataset.initialized = 'true';
+
+    const textarea = shellEl.querySelector('.editor-textarea');
+    const previewEl = shellEl.querySelector('.editor-preview');
+    const cheatsheet = shellEl.querySelector('.editor-cheatsheet');
+    const helpBtn = shellEl.querySelector('[data-toggle-help]');
+    const tabBtns = shellEl.querySelectorAll('[data-editor-mode]');
+    const toolBtns = shellEl.querySelectorAll('[data-tool]');
+
+    // Toggle ayuda / guía de formato
+    helpBtn?.addEventListener('click', () => {
+      if (cheatsheet) cheatsheet.hidden = !cheatsheet.hidden;
+    });
+
+    // Pestañas Escribir / Vista previa
+    tabBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const mode = btn.dataset.editorMode;
+        tabBtns.forEach((b) => b.classList.toggle('is-active', b === btn));
+        if (mode === 'preview') {
+          const md = window.DevBlog?.Markdown || window.Markdown;
+          const content = textarea.value.trim();
+          previewEl.innerHTML = content && md ? md.render(content).html : '';
+          previewEl.hidden = false;
+          textarea.hidden = true;
+        } else {
+          previewEl.hidden = true;
+          textarea.hidden = false;
+          textarea.focus();
+        }
+      });
+    });
+
+    // Botones de formato
+    toolBtns.forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const tool = btn.dataset.tool;
+        if (tool === 'h2') {
+          insertFormatting(textarea, '\n\n## ', '\n', '01. Título de sección');
+        } else if (tool === 'h3') {
+          insertFormatting(textarea, '\n\n### ', '\n', 'Subtítulo');
+        } else if (tool === 'bold') {
+          insertFormatting(textarea, '**', '**', 'texto en negrita');
+        } else if (tool === 'italic') {
+          insertFormatting(textarea, '*', '*', 'texto en cursiva');
+        } else if (tool === 'code') {
+          insertFormatting(textarea, '\n\n```js\n', '\n```\n', '// Escribe tu código o avance aquí');
+        } else if (tool === 'tip') {
+          insertFormatting(textarea, '\n\n> **LO QUE APRENDÍ:** ', '\n', 'Escribe aquí la conclusión clave o aprendizaje...');
+        } else if (tool === 'list') {
+          insertFormatting(textarea, '\n- ', '\n- Elemento 2\n- Elemento 3\n', 'Elemento 1');
+        } else if (tool === 'image') {
+          openImageInsertModal(textarea);
+        }
+      });
+    });
+  }
+
+  function renderEditorShell({ textareaId, textareaName, content = '', placeholder = '', rows = 6 }) {
+    return `
+      <div class="editor-shell" data-editor-shell>
+        <div class="editor-header-tabs">
+          <div class="editor-tab-group">
+            <button type="button" class="editor-mode-btn is-active" data-editor-mode="write">✏️ Escribir</button>
+            <button type="button" class="editor-mode-btn" data-editor-mode="preview">👁️ Vista previa</button>
+          </div>
+          <button type="button" class="editor-help-toggle" data-toggle-help>💡 Ayuda de formato</button>
+        </div>
+
+        <div class="editor-cheatsheet" hidden>
+          <div class="cheat-col">
+            <strong>Encabezados</strong>
+            <code>## 01. Título</code> (sección)<br>
+            <code>### Subtítulo</code>
+          </div>
+          <div class="cheat-col">
+            <strong>Texto y notas</strong>
+            <code>**negrita**</code> · <code>*cursiva*</code><br>
+            <code>&gt; **LO QUE APRENDÍ:**</code>
+          </div>
+          <div class="cheat-col">
+            <strong>Código e imágenes</strong>
+            <code>\`\`\`js archivo.js</code><br>
+            <code>![Pie de foto](imagen.png)</code>
+          </div>
+        </div>
+
+        <div class="editor-toolbar">
+          <button type="button" class="tool-btn" data-tool="h2" title="Título de sección">🔤 Título H2</button>
+          <button type="button" class="tool-btn" data-tool="h3" title="Subtítulo">📝 Subtítulo H3</button>
+          <span class="tool-sep"></span>
+          <button type="button" class="tool-btn tool-btn--bold" data-tool="bold" title="Negrita">B</button>
+          <button type="button" class="tool-btn tool-btn--italic" data-tool="italic" title="Cursiva">I</button>
+          <button type="button" class="tool-btn" data-tool="code" title="Bloque de código">💻 Código</button>
+          <button type="button" class="tool-btn tool-btn--tip" data-tool="tip" title="Recuadro de aprendizaje">💡 Tip</button>
+          <button type="button" class="tool-btn" data-tool="list" title="Lista">• Lista</button>
+          <span class="tool-sep"></span>
+          <button type="button" class="tool-btn tool-btn--image" data-tool="image" title="Insertar imagen exactamente en la posición del cursor">
+            📷 + Insertar imagen aquí
+          </button>
+        </div>
+
+        <textarea class="editor-textarea" id="${esc(textareaId)}" name="${esc(textareaName)}" rows="${rows}" placeholder="${esc(placeholder)}">${esc(content)}</textarea>
+        <div class="editor-preview prose" hidden></div>
+      </div>
+    `;
+  }
+
+  function updateCoverPreviewCard(containerEl, imgUrl, onRemove) {
+    if (!containerEl) return;
+    if (!imgUrl) {
+      containerEl.hidden = true;
+      containerEl.innerHTML = '';
+      return;
+    }
+    containerEl.hidden = false;
+    containerEl.innerHTML = `
+      <img src="${esc(imgUrl)}" class="cover-preview-thumb" alt="Portada">
+      <div class="cover-preview-info">
+        <div class="cover-preview-title">Portada seleccionada</div>
+        <div class="cover-preview-hint">Se mostrará en la tarjeta del post</div>
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" data-remove-cover>Quitar</button>
+    `;
+    containerEl.querySelector('[data-remove-cover]')?.addEventListener('click', onRemove);
+  }
+
+  /* ---------------------------------------------------------------
+   * Modal: Insertar Imagen en el Texto (posición exacta del cursor)
+   * ------------------------------------------------------------- */
+  const insertImgModal = $('#insert-image-modal');
+  const insertImgForm = $('#insert-image-form');
+  const insertImgFile = $('#input-modal-img-file');
+  const insertImgBrowse = $('#btn-browse-insert-img');
+  const insertImgUrl = $('#modal-input-img-url');
+  const insertImgCaption = $('#modal-input-caption');
+  const insertImgPreviewBox = $('#modal-img-preview-box');
+  const insertImgPreviewTag = $('#modal-preview-img-tag');
+  const insertImgStatus = $('#modal-img-status');
+
+  function openImageInsertModal(textarea) {
+    activeTextareaForModal = textarea;
+    savedCursorPos = {
+      start: textarea.selectionStart,
+      end: textarea.selectionEnd,
+    };
+    if (!insertImgModal) return;
+    insertImgForm?.reset();
+    state.modalPendingImage = '';
+    if (insertImgPreviewBox) insertImgPreviewBox.hidden = true;
+    if (insertImgPreviewTag) insertImgPreviewTag.src = '';
+    if (insertImgStatus) insertImgStatus.textContent = 'PNG, JPG, SVG o WebP';
+    insertImgModal.hidden = false;
+    void insertImgModal.offsetWidth;
+    insertImgModal.classList.add('is-open');
+    document.body.classList.add('has-modal');
+    insertImgBrowse?.focus();
+  }
+
+  function closeImageInsertModal() {
+    if (!insertImgModal) return;
+    insertImgModal.classList.remove('is-open');
+    document.body.classList.remove('has-modal');
+    setTimeout(() => {
+      insertImgModal.hidden = true;
+    }, 160);
+    if (activeTextareaForModal) {
+      activeTextareaForModal.focus();
+    }
+  }
+
+  insertImgBrowse?.addEventListener('click', () => insertImgFile?.click());
+
+  insertImgFile?.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      insertImgStatus.textContent = `Cargando ${file.name}...`;
+      const dataUrl = await UI.readImage(file);
+      state.modalPendingImage = dataUrl;
+      if (insertImgPreviewTag) insertImgPreviewTag.src = dataUrl;
+      if (insertImgPreviewBox) insertImgPreviewBox.hidden = false;
+      insertImgStatus.textContent = `Archivo listo: ${file.name}`;
+      if (!insertImgCaption.value.trim()) {
+        const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+        insertImgCaption.value = cleanName;
+      }
+    } catch (err) {
+      UI.toast(err.message, 'error');
+      insertImgStatus.textContent = 'Error al leer el archivo';
+    }
+  });
+
+  insertImgUrl?.addEventListener('input', () => {
+    const val = insertImgUrl.value.trim();
+    if (val && !state.modalPendingImage) {
+      if (insertImgPreviewTag) insertImgPreviewTag.src = val;
+      if (insertImgPreviewBox) insertImgPreviewBox.hidden = false;
+    } else if (!val && !state.modalPendingImage) {
+      if (insertImgPreviewBox) insertImgPreviewBox.hidden = true;
+    }
+  });
+
+  insertImgForm?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const finalUrl = state.modalPendingImage || insertImgUrl.value.trim();
+    if (!finalUrl) {
+      UI.toast('Por favor selecciona una imagen o escribe una URL.', 'error');
+      return;
+    }
+    const caption = insertImgCaption.value.trim() || 'Captura de avance';
+    const mdSnippet = `\n\n![${caption}](${finalUrl})\n\n`;
+
+    if (activeTextareaForModal) {
+      const tx = activeTextareaForModal;
+      tx.focus();
+      const start = savedCursorPos ? savedCursorPos.start : tx.selectionStart;
+      const end = savedCursorPos ? savedCursorPos.end : tx.selectionEnd;
+      if (typeof tx.setRangeText === 'function') {
+        tx.setRangeText(mdSnippet, start, end, 'end');
+      } else {
+        tx.value = tx.value.substring(0, start) + mdSnippet + tx.value.substring(end);
+      }
+      tx.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    closeImageInsertModal();
+    UI.toast('¡Imagen insertada en la posición del cursor!', 'success');
+  });
+
+  insertImgModal?.querySelectorAll('[data-dismiss]').forEach((btn) => {
+    btn.addEventListener('click', closeImageInsertModal);
+  });
+  insertImgModal?.addEventListener('mousedown', (e) => {
+    if (e.target === insertImgModal) closeImageInsertModal();
+  });
+
+  /* ---------------------------------------------------------------
    * Caja de publicación rápida ("Crear nueva publicación")
    * ------------------------------------------------------------- */
   const composer = $('#composer');
+  const composerEditorShell = $('#composer-editor-shell');
+  if (composerEditorShell) initEditorShell(composerEditorShell);
+
   const composerTags = UI.TagInput($('#composer-tags'), ['React', 'UI/UX', 'Proyecto']);
   const imageInput = $('#composer-image-url');
   const fileInput = $('#composer-image-file');
+  const composerCoverPreview = $('#composer-cover-preview');
 
   fileInput?.addEventListener('change', async (e) => {
     const file = e.target.files[0];
@@ -106,9 +381,26 @@
     try {
       state.composerImage = await UI.readImage(file);
       imageInput.value = `Imagen cargada: ${file.name}`;
-      UI.toast('Imagen lista para publicar', 'success');
+      updateCoverPreviewCard(composerCoverPreview, state.composerImage, () => {
+        state.composerImage = '';
+        imageInput.value = '';
+        updateCoverPreviewCard(composerCoverPreview, '');
+      });
+      UI.toast('Imagen de portada lista para publicar', 'success');
     } catch (error) {
       UI.toast(error.message, 'error');
+    }
+  });
+
+  imageInput?.addEventListener('input', () => {
+    const val = imageInput.value.trim();
+    if (!state.composerImage && val) {
+      updateCoverPreviewCard(composerCoverPreview, val, () => {
+        imageInput.value = '';
+        updateCoverPreviewCard(composerCoverPreview, '');
+      });
+    } else if (!val && !state.composerImage) {
+      updateCoverPreviewCard(composerCoverPreview, '');
     }
   });
 
@@ -127,11 +419,16 @@
       state.composerImage ||
       (rawUrl && !rawUrl.startsWith('Imagen cargada:') ? rawUrl : '');
 
+    const layout = composer.layout ? composer.layout.value : 'side';
+    const kind = composer.kind ? composer.kind.value : 'Proyecto';
+
     const created = Store.create({
       title,
       content: content || title,
       tags: composerTags.get(),
       image: cover,
+      layout,
+      kind,
       status,
     });
 
@@ -143,6 +440,7 @@
     composer.reset();
     composerTags.clear();
     state.composerImage = '';
+    updateCoverPreviewCard(composerCoverPreview, '');
     renderAll();
     UI.toast(
       status === 'publicado' ? '¡Avance publicado en el feed!' : 'Guardado como borrador.',
@@ -162,6 +460,7 @@
     composer.reset();
     composerTags.set([]);
     state.composerImage = '';
+    updateCoverPreviewCard(composerCoverPreview, '');
     UI.toast('Publicación cancelada');
   });
 
@@ -184,33 +483,50 @@
   });
 
   /* ---------------------------------------------------------------
-   * Mi Feed: tarjetas y Edición en Caliente
+   * Mi Feed: tarjetas y Edición en Caliente con Editor Asistido
    * ------------------------------------------------------------- */
   const myPosts = $('#my-posts');
 
   function hotEditCard(post) {
+    const isTop = post.layout === 'top';
     const media = post.image
       ? `<div class="post-card-media"><img src="${esc(post.image)}" alt=""></div>`
       : '';
     return `
-      <article class="post-card post-card--row post-card--editing" data-id="${esc(post.id)}">
+      <article class="post-card ${isTop ? 'post-card--featured' : 'post-card--row'} post-card--editing" data-id="${esc(post.id)}">
         ${media}
         <form class="post-card-body edit-form" data-edit-form novalidate>
           <div class="post-card-top">
             <span class="status status--editing">EDITANDO EN CALIENTE</span>
             <div class="post-card-actions">
-              <button type="button" class="btn btn-secondary btn-sm" data-action="cancel">${UI.Icons.edit}<span>Editar</span></button>
+              <button type="button" class="btn btn-secondary btn-sm" data-action="cancel">${UI.Icons.edit}<span>Cerrar</span></button>
               <button type="button" class="btn btn-secondary btn-sm btn-danger-soft" data-action="delete" data-id="${esc(post.id)}">${UI.Icons.trash}<span>Eliminar</span></button>
             </div>
           </div>
           <p class="post-kicker">MODO EDICIÓN · CAMBIOS SIN GUARDAR</p>
-          <label class="visually-hidden" for="edit-title">Título</label>
-          <input class="input input--hot" id="edit-title" name="title" value="${esc(post.title)}" required>
-          <label class="visually-hidden" for="edit-content">Contenido</label>
-          <textarea class="input textarea textarea--hot" id="edit-content" name="content" rows="4">${esc(post.content)}</textarea>
+
+          <div class="field">
+            <label class="label" for="edit-title">Título de la publicación</label>
+            <input class="input input--hot" id="edit-title" name="title" value="${esc(post.title)}" required>
+          </div>
+
+          <div class="field">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+              <label class="label" for="edit-content">Contenido de la publicación</label>
+              <span class="muted" style="font-size: 0.74rem;">Usa los botones para dar formato o insertar imágenes</span>
+            </div>
+            ${renderEditorShell({
+              textareaId: 'edit-content',
+              textareaName: 'content',
+              content: post.content,
+              placeholder: 'Escribe el contenido de tu avance o práctica...',
+              rows: 8,
+            })}
+          </div>
+
           <div class="form-grid-2">
             <div class="field">
-              <label class="label">Tipo</label>
+              <label class="label">Tipo de publicación</label>
               <select class="input select select--sm" name="kind">
                 <option value="Proyecto"${post.kind === 'Proyecto' ? ' selected' : ''}>Proyecto</option>
                 <option value="Nota"${post.kind === 'Nota' ? ' selected' : ''}>Nota</option>
@@ -225,14 +541,48 @@
               </select>
             </div>
           </div>
-          <div class="field">
-            <label class="label">Imagen de portada (URL o ruta)</label>
-            <input class="input select--sm" name="image" value="${esc(post.image || '')}" placeholder="assets/images/thumb-design.svg">
+
+          <div class="form-grid-2">
+            <div class="field">
+              <label class="label">Posición de la portada</label>
+              <select class="input select select--sm" name="layout" id="edit-layout">
+                <option value="side"${post.layout !== 'top' ? ' selected' : ''}>A un costado (Recomendado)</option>
+                <option value="top"${post.layout === 'top' ? ' selected' : ''}>Arriba (Banner panorámico)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="label">Imagen de portada</label>
+              <div class="input-file-group">
+                <input class="input select--sm" name="image" id="edit-image-url" value="${esc(post.image || '')}" placeholder="assets/images/... o https://...">
+                <label class="btn btn-secondary btn-sm" style="margin:0; white-space:nowrap; cursor:pointer;">
+                  📁 Subir
+                  <input type="file" id="edit-image-file" accept="image/*" class="visually-hidden">
+                </label>
+              </div>
+            </div>
           </div>
-          <div data-edit-tags></div>
+
+          <div class="cover-preview-card" id="edit-cover-preview" ${post.image ? '' : 'hidden'}>
+            ${
+              post.image
+                ? `<img src="${esc(post.image)}" class="cover-preview-thumb" alt="Portada">
+                   <div class="cover-preview-info">
+                     <div class="cover-preview-title">Portada actual</div>
+                     <div class="cover-preview-hint">Se mostrará según la posición elegida</div>
+                   </div>
+                   <button type="button" class="btn btn-secondary btn-sm" data-remove-cover>Quitar</button>`
+                : ''
+            }
+          </div>
+
+          <div class="field">
+            <label class="label">Etiquetas</label>
+            <div data-edit-tags></div>
+          </div>
+
           <div class="edit-form-footer">
             <div class="edit-form-actions">
-              <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
+              <button type="submit" class="btn btn-primary btn-sm">💾 Guardar cambios</button>
               <button type="button" class="btn btn-secondary btn-sm" data-action="cancel">Cancelar</button>
             </div>
             <span class="muted">Editando directamente en el feed</span>
@@ -265,12 +615,59 @@
       const post = posts.find((p) => p.id === state.editingId);
       if (post) {
         state.editTags = UI.TagInput(form.querySelector('[data-edit-tags]'), post.tags);
+
+        // Inicializar editor visual asistido en la tarjeta caliente
+        const editShell = form.querySelector('[data-editor-shell]');
+        if (editShell) initEditorShell(editShell);
+
+        // Portada y preview en edición caliente
+        const editImgUrl = form.querySelector('#edit-image-url');
+        const editImgFile = form.querySelector('#edit-image-file');
+        const editPreview = form.querySelector('#edit-cover-preview');
+
+        editPreview?.querySelector('[data-remove-cover]')?.addEventListener('click', () => {
+          if (editImgUrl) editImgUrl.value = '';
+          state.editCoverImage = '';
+          updateCoverPreviewCard(editPreview, '');
+        });
+
+        editImgFile?.addEventListener('change', async (e) => {
+          const file = e.target.files[0];
+          e.target.value = '';
+          if (!file) return;
+          try {
+            const dataUrl = await UI.readImage(file);
+            state.editCoverImage = dataUrl;
+            if (editImgUrl) editImgUrl.value = `Imagen cargada: ${file.name}`;
+            updateCoverPreviewCard(editPreview, dataUrl, () => {
+              state.editCoverImage = '';
+              if (editImgUrl) editImgUrl.value = '';
+              updateCoverPreviewCard(editPreview, '');
+            });
+            UI.toast('Portada cargada para la publicación', 'success');
+          } catch (err) {
+            UI.toast(err.message, 'error');
+          }
+        });
+
+        editImgUrl?.addEventListener('input', () => {
+          const val = editImgUrl.value.trim();
+          if (!state.editCoverImage && val) {
+            updateCoverPreviewCard(editPreview, val, () => {
+              editImgUrl.value = '';
+              updateCoverPreviewCard(editPreview, '');
+            });
+          } else if (!val && !state.editCoverImage) {
+            updateCoverPreviewCard(editPreview, '');
+          }
+        });
       }
     }
   }
 
   function startEditing(id) {
     state.editingId = id;
+    state.editCoverImage = '';
     renderMyPosts();
     const card = myPosts.querySelector(`[data-id="${CSS.escape(id)}"]`);
     card?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -280,6 +677,7 @@
   function stopEditing() {
     state.editingId = null;
     state.editTags = null;
+    state.editCoverImage = '';
     renderMyPosts();
   }
 
@@ -316,17 +714,24 @@
       return;
     }
 
+    const rawUrl = form.image ? form.image.value.trim() : '';
+    const cover =
+      state.editCoverImage ||
+      (rawUrl && !rawUrl.startsWith('Imagen cargada:') ? rawUrl : (rawUrl === '' ? '' : undefined));
+
     Store.update(state.editingId, {
       title,
       content: form.content.value.trim(),
       kind: form.kind?.value || 'Proyecto',
       status: form.status?.value || 'publicado',
-      image: form.image ? form.image.value.trim() : undefined,
+      layout: form.layout?.value || 'side',
+      image: cover,
       tags: state.editTags ? state.editTags.get() : undefined,
     });
 
     state.editingId = null;
     state.editTags = null;
+    state.editCoverImage = '';
     renderAll();
     UI.toast('Publicación actualizada.', 'success');
   });

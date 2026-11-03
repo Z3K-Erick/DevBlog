@@ -78,11 +78,13 @@
     const blocks = String(content || '')
       .replace(/\r\n?/g, '\n')
       .replace(/```[\s\S]*?```/g, '')
+      .replace(/!\[.*?\]\(.*?\)/g, '')
       .split(/\n{2,}/)
       .map((b) => b.trim())
-      .filter((b) => b && !/^(#{1,3}\s|!\[|>|[-*]\s|\d+\.\s)/.test(b));
+      .filter((b) => b && !/^(#{1,3}\s|>|[-*]\s|\d+\.\s)/.test(b));
 
     const text = (blocks[0] || '')
+      .replace(/!\[.*?\]\(.*?\)/g, '')
       .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
       .replace(/[*_`]/g, '')
       .replace(/\s+/g, ' ')
@@ -116,6 +118,7 @@
       id: 'proyecto-devblog',
       title: 'Construyendo mi propio DevBlog: del diseño en Figma al código',
       kind: 'Proyecto',
+      layout: 'side',
       tags: ['HTML/CSS', 'JavaScript', 'UI/UX'],
       image: 'assets/images/thumb-design.svg',
       status: 'publicado',
@@ -213,12 +216,13 @@
       return post ? enrich(post) : null;
     },
 
-    create({ title, content = '', tags = [], image = '', kind = 'Proyecto', status = 'publicado' }) {
+    create({ title, content = '', tags = [], image = '', kind = 'Proyecto', layout = 'side', status = 'publicado' }) {
       const clean = cleanTags(tags);
       const post = {
         id: uid(),
         title: String(title).trim(),
         kind,
+        layout: layout || 'side',
         content: String(content).trim(),
         tags: clean.length ? clean : ['Proyecto'],
         image: image || '',
@@ -235,7 +239,7 @@
       const index = posts.findIndex((p) => p.id === id);
       if (index === -1) return null;
 
-      const allowed = ['title', 'content', 'tags', 'image', 'kind', 'status'];
+      const allowed = ['title', 'content', 'tags', 'image', 'kind', 'status', 'layout'];
       const next = { ...posts[index] };
       allowed.forEach((key) => {
         if (patch[key] !== undefined) next[key] = patch[key];

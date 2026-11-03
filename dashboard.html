@@ -133,9 +133,76 @@
                 <input class="input" id="composer-title" name="title" placeholder="Escribe el título de tu publicación..." required>
               </div>
 
+              <!-- Editor Visual Asistido para el contenido -->
               <div class="field">
-                <label class="label" for="composer-content">¿Qué estás construyendo o aprendiendo hoy?</label>
-                <textarea class="input textarea" id="composer-content" name="content" rows="4" placeholder="Escribe el contenido de tu publicación, agrega bloques de código (```js) o explica tu avance..."></textarea>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                  <label class="label" for="composer-content">Contenido de la publicación</label>
+                  <span class="muted" style="font-size: 0.74rem;">Usa los botones para dar formato o insertar imágenes</span>
+                </div>
+
+                <div class="editor-shell" id="composer-editor-shell">
+                  <div class="editor-header-tabs">
+                    <div class="editor-tab-group">
+                      <button type="button" class="editor-mode-btn is-active" data-editor-mode="write">✏️ Escribir</button>
+                      <button type="button" class="editor-mode-btn" data-editor-mode="preview">👁️ Vista previa</button>
+                    </div>
+                    <button type="button" class="editor-help-toggle" data-toggle-help>💡 Ayuda de formato</button>
+                  </div>
+
+                  <div class="editor-cheatsheet" hidden>
+                    <div class="cheat-col">
+                      <strong>Encabezados</strong>
+                      <code>## 01. Título</code> (sección)<br>
+                      <code>### Subtítulo</code>
+                    </div>
+                    <div class="cheat-col">
+                      <strong>Texto y notas</strong>
+                      <code>**negrita**</code> · <code>*cursiva*</code><br>
+                      <code>&gt; **LO QUE APRENDÍ:**</code>
+                    </div>
+                    <div class="cheat-col">
+                      <strong>Código e imágenes</strong>
+                      <code>```js archivo.js</code><br>
+                      <code>![Pie de foto](imagen.png)</code>
+                    </div>
+                  </div>
+
+                  <div class="editor-toolbar">
+                    <button type="button" class="tool-btn" data-tool="h2" title="Título de sección">🔤 Título H2</button>
+                    <button type="button" class="tool-btn" data-tool="h3" title="Subtítulo">📝 Subtítulo H3</button>
+                    <span class="tool-sep"></span>
+                    <button type="button" class="tool-btn tool-btn--bold" data-tool="bold" title="Negrita">B</button>
+                    <button type="button" class="tool-btn tool-btn--italic" data-tool="italic" title="Cursiva">I</button>
+                    <button type="button" class="tool-btn" data-tool="code" title="Bloque de código">💻 Código</button>
+                    <button type="button" class="tool-btn tool-btn--tip" data-tool="tip" title="Recuadro de aprendizaje">💡 Tip</button>
+                    <button type="button" class="tool-btn" data-tool="list" title="Lista">• Lista</button>
+                    <span class="tool-sep"></span>
+                    <button type="button" class="tool-btn tool-btn--image" data-tool="image" title="Insertar imagen exactamente en la posición del cursor">
+                      📷 + Insertar imagen aquí
+                    </button>
+                  </div>
+
+                  <textarea class="editor-textarea" id="composer-content" name="content" rows="5" placeholder="Escribe aquí tu avance... Puedes usar los botones de arriba para insertar títulos, código o imágenes exactamente donde quieras en el texto."></textarea>
+                  <div class="editor-preview prose" id="composer-preview" hidden></div>
+                </div>
+              </div>
+
+              <div class="form-grid-2">
+                <div class="field">
+                  <label class="label">Tipo de publicación</label>
+                  <select class="input select select--sm" name="kind">
+                    <option value="Proyecto">Proyecto</option>
+                    <option value="Nota">Nota</option>
+                    <option value="Guía">Guía</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label class="label">Posición de la portada</label>
+                  <select class="input select select--sm" name="layout" id="composer-layout">
+                    <option value="side">A un costado (Recomendado)</option>
+                    <option value="top">Arriba (Banner panorámico)</option>
+                  </select>
+                </div>
               </div>
 
               <div class="field">
@@ -153,6 +220,7 @@
                     <input type="file" id="composer-image-file" accept="image/*" class="visually-hidden">
                   </label>
                 </div>
+                <div class="cover-preview-card" id="composer-cover-preview" hidden></div>
               </div>
 
               <div class="composer-foot">
@@ -337,7 +405,54 @@
     </div>
   </div>
 
+  <!-- ========================================================================
+       MODAL: INSERTAR IMAGEN EN EL TEXTO (DONDE ESTÉ EL CURSOR)
+       ======================================================================== -->
+  <div class="modal-overlay" id="insert-image-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="insert-img-title">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title" id="insert-img-title">📷 Insertar imagen en el texto</h2>
+          <p class="modal-subtitle">Se colocará exactamente donde tienes el cursor</p>
+        </div>
+        <button type="button" class="icon-btn" data-dismiss aria-label="Cerrar">✕</button>
+      </div>
+      <form class="modal-body" id="insert-image-form" novalidate>
+        <div class="field">
+          <label class="label">1. Seleccionar archivo de imagen</label>
+          <div class="modal-dropzone">
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-browse-insert-img">
+              📁 Elegir imagen de mi computadora
+            </button>
+            <input type="file" id="input-modal-img-file" accept="image/*" class="visually-hidden">
+            <span class="muted" id="modal-img-status">PNG, JPG, SVG o WebP</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label" for="modal-input-img-url">O escribir URL / ruta directa</label>
+          <input class="input select--sm" id="modal-input-img-url" placeholder="assets/images/... o https://...">
+        </div>
+
+        <div class="field">
+          <label class="label" for="modal-input-caption">2. Pie de foto / Descripción (opcional)</label>
+          <input class="input select--sm" id="modal-input-caption" placeholder="Ej: Captura de la interfaz o avance">
+        </div>
+
+        <div class="modal-img-preview-box" id="modal-img-preview-box" hidden>
+          <img src="" id="modal-preview-img-tag" alt="Vista previa de la imagen">
+        </div>
+
+        <div class="modal-footer" style="padding: 0; margin-top: 6px;">
+          <button type="button" class="btn btn-secondary btn-sm" data-dismiss>Cancelar</button>
+          <button type="submit" class="btn btn-primary btn-sm">Insertar en el texto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script src="js/store.js"></script>
+  <script src="js/markdown.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/dashboard.js"></script>
 </body>

@@ -82,6 +82,20 @@
     const put = (html) => `\u0000${slots.push(html) - 1}\u0000`;
 
     let s = String(raw)
+      // Imágenes dentro de párrafos o en cualquier lugar
+      .replace(/!\[([^\]]*)\]\((.+?)\)/g, (_, alt, url) => {
+        const src = safeImage(url.trim().replace(/^["']|["']$/g, ''));
+        if (!src) return '';
+        const title = alt || 'Vista previa';
+        const caption = alt ? `<figcaption>${esc(alt)}</figcaption>` : '';
+        return put(
+          `<figure class="prose-figure">` +
+            `<div class="prose-figure-bar"><span class="win-dots"><i></i><i></i><i></i></span><span>${esc(title)}</span></div>` +
+            `<div class="prose-figure-body"><img src="${esc(src)}" alt="${esc(alt)}" loading="lazy"></div>` +
+            caption +
+          `</figure>`
+        );
+      })
       .replace(/`([^`]+)`/g, (_, c) => put(`<code>${esc(c)}</code>`))
       .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, text, url) => {
         const href = safeLink(url);
@@ -182,9 +196,9 @@
       }
 
       // Imagen en su propia línea -> figura con barra superior estilo ventana
-      if ((m = line.match(/^!\[([^\]]*)\]\(([^)\s]+)\)\s*$/))) {
+      if ((m = line.match(/^!\[([^\]]*)\]\((.+?)\)\s*$/))) {
         flush();
-        const src = safeImage(m[2]);
+        const src = safeImage(m[2].trim().replace(/^["']|["']$/g, ''));
         if (src) {
           const title = m[1] || 'Vista previa';
           const caption = m[1] ? `<figcaption>${esc(m[1])}</figcaption>` : '';
