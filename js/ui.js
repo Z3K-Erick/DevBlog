@@ -23,6 +23,8 @@
     alert: svg('<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/>', 18),
     image: svg('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/>', 16),
     clock: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', 13),
+    eye: svg('<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>', 13),
+    heart: svg('<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>', 13),
   };
 
   /* ---------------------------------------------------------------
@@ -248,6 +250,8 @@
 
     const kindLabel = (post.kind || 'Proyecto').toUpperCase();
     const dateLabel = Utils.formatDate(post.date).toUpperCase();
+    const viewsCount = Number(post.views) || 0;
+    const likesCount = Number(post.likes) || 0;
 
     if (autoVariant === 'featured' && !admin) {
       return `
@@ -256,7 +260,11 @@
           <div class="post-card-body">
             <div class="post-card-top">
               <span class="featured-kicker">${esc(kindLabel)} DESTACADO · ${esc(dateLabel)}</span>
-              <span class="post-readtime">${Icons.clock} ${esc(post.readTime)}</span>
+              <div class="post-card-meta-group">
+                <span class="post-meta-stat" title="${viewsCount} vistas">${Icons.eye} <span>${viewsCount}</span></span>
+                <span class="post-meta-stat" title="${likesCount} likes">${Icons.heart} <span>${likesCount}</span></span>
+                <span class="post-readtime">${Icons.clock} ${esc(post.readTime)}</span>
+              </div>
             </div>
             <h3 class="post-card-title"><a href="${url}">${esc(post.title)}</a></h3>
             ${post.excerpt ? `<p class="post-card-excerpt">${esc(post.excerpt)}</p>` : ''}
@@ -282,8 +290,8 @@
           ${statusBadge(post.status)}
           ${actions}
         </div>
-        <p class="post-kicker">${esc(kindLabel)} · ${esc(dateLabel)} · ${esc(post.readTime.toUpperCase())}</p>`
-      : `<p class="post-kicker">${esc(kindLabel)} · ${esc(dateLabel)} · ${esc(post.readTime.toUpperCase())}</p>`;
+        <p class="post-kicker">${esc(kindLabel)} · ${esc(dateLabel)} · ${esc(post.readTime.toUpperCase())} · <span class="post-meta-stat" title="${viewsCount} vistas">${Icons.eye} ${viewsCount}</span> · <span class="post-meta-stat" title="${likesCount} likes">${Icons.heart} ${likesCount}</span></p>`
+      : `<p class="post-kicker">${esc(kindLabel)} · ${esc(dateLabel)} · ${esc(post.readTime.toUpperCase())} · <span class="post-meta-stat" title="${viewsCount} vistas">${Icons.eye} ${viewsCount}</span> · <span class="post-meta-stat" title="${likesCount} likes">${Icons.heart} ${likesCount}</span></p>`;
 
     const footerLeft = admin
       ? `<span class="muted">${post.status === 'publicado' ? 'Visible en el feed público' : 'Guardado como borrador'}</span>`

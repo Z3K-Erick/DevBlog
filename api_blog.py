@@ -65,6 +65,8 @@ SEED_POSTS: List[Dict[str, Any]] = [
         "status": "publicado",
         "date": "2026-11-02T12:00:00",
         "updated_at": "2026-11-02T12:00:00",
+        "views": 0,
+        "likes": 0,
         "content": "\n".join(
             [
                 "Este es el primer post oficial de mi DevBlog: una plataforma creada desde cero para documentar mis proyectos, prácticas y avances mientras estudio ingeniería.",
@@ -149,10 +151,20 @@ def init_db() -> None:
                 image TEXT NOT NULL DEFAULT '',
                 status TEXT NOT NULL DEFAULT 'publicado',
                 date TEXT NOT NULL,
-                updated_at TEXT NOT NULL
+                updated_at TEXT NOT NULL,
+                views INTEGER NOT NULL DEFAULT 0,
+                likes INTEGER NOT NULL DEFAULT 0
             )
             """
         )
+
+        # Migración retrocompatible para bases de datos existentes
+        cursor = conn.execute("PRAGMA table_info(publicaciones)")
+        columnas_existentes = {fila["name"] for fila in cursor.fetchall()}
+        if "views" not in columnas_existentes:
+            conn.execute("ALTER TABLE publicaciones ADD COLUMN views INTEGER NOT NULL DEFAULT 0")
+        if "likes" not in columnas_existentes:
+            conn.execute("ALTER TABLE publicaciones ADD COLUMN likes INTEGER NOT NULL DEFAULT 0")
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS ideas (
@@ -194,8 +206,8 @@ def init_db() -> None:
             for p in SEED_POSTS:
                 conn.execute(
                     """
-                    INSERT INTO publicaciones (id, title, kind, layout, content, tags_json, image, status, date, updated_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO publicaciones (id, title, kind, layout, content, tags_json, image, status, date, updated_at, views, likes)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         p["id"],
@@ -208,6 +220,8 @@ def init_db() -> None:
                         p["status"],
                         p["date"],
                         p["updated_at"],
+                        p.get("views", 0),
+                        p.get("likes", 0),
                     ),
                 )
 
@@ -307,6 +321,9 @@ def row_to_post(row: sqlite3.Row) -> Dict[str, Any]:
     tags = clean_tags(json.loads(row["tags_json"] or "[]"))
     content = row["content"] or ""
     kind = row["kind"] or "Proyecto"
+    col_names = row.keys() if hasattr(row, "keys") else []
+    views = int(row["views"]) if "views" in col_names and row["views"] is not None else 0
+    likes = int(row["likes"]) if "likes" in col_names and row["likes"] is not None else 0
     return {
         "id": row["id"],
         "title": row["title"],
@@ -319,6 +336,8 @@ def row_to_post(row: sqlite3.Row) -> Dict[str, Any]:
         "status": row["status"] or "publicado",
         "date": row["date"],
         "updatedAt": row["updated_at"],
+        "views": views,
+        "likes": likes,
         "excerpt": compute_excerpt(content),
         "readTime": compute_read_time(content),
         "autor_interno": "erick@devblog.com",  # Atributo interno filtrado por response_model
@@ -381,6 +400,8 @@ class PublicacionInterna(BaseModel):
     status: str
     date: str
     updatedAt: str
+    views: int = 0
+    likes: int = 0
     excerpt: str
     readTime: str
     autor_interno: str
@@ -398,8 +419,16 @@ class PublicacionOut(BaseModel):
     status: str
     date: str
     updatedAt: str
+    views: int = 0
+    likes: int = 0
     excerpt: str
     readTime: str
+
+
+class LikeRequest(BaseModel):
+    action: Optional[Literal["like", "unlike", "toggle"]] = Field(default=None, description="Acción de like")
+    liked: Optional[bool] = Field(default=None, description="Estado explícito de like (True suma, False resta)")
+    toggle: Optional[bool] = Field(default=None, description="Flag booleano para alternar")
 
 
 class IdeaIn(BaseModel):
@@ -730,8 +759,8 @@ def crear_proyecto(
         # Verificar conflicto de título idéntico si se requiere evitar duplicados accidentales
         conn.execute(
             """
-            INSERT INTO publicaciones (id, title, kind, layout, content, tags_json, image, status, date, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO publicaciones (id, title, kind, layout, content, tags_json, image, status, date, updated_at, views, likes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0)
             """,
             (
                 new_id,
@@ -785,8 +814,8 @@ def registrar_proyecto_simple(
     with get_db() as conn:
         conn.execute(
             """
-            INSERT INTO publicaciones (id, title, kind, layout, content, tags_json, image, status, date, updated_at)
-            VALUES (?, ?, ?, 'side', ?, ?, '', ?, ?, ?)
+            INSERT INTO publicaciones (id, title, kind, layout, content, tags_json, image, status, date, updated_at, views, likes)
+            VALUES (?, ?, ?, 'side', ?, ?, '', ?, ?, ?, 0, 0)
             """,
             (
                 new_id,
@@ -902,6 +931,190 @@ def eliminar_proyecto(id_: str, response: Response):
         "title": row["title"],
         "mensaje": "Publicación eliminada correctamente.",
     }
+
+
+# ---------------------------------------------------------------------------
+# 3.1. Telemetría y Métricas de Posts (/api/posts/<id>/view, /like, /api/analytics/summary)
+# ---------------------------------------------------------------------------
+@app.post(
+    "/api/posts/{id_}/view",
+    tags=["Telemetría y Métricas"],
+)
+@app.post(
+    "/posts/{id_}/view",
+    tags=["Telemetría y Métricas"],
+)
+@app.post(
+    "/api/proyectos/{id_}/view",
+    tags=["Telemetría y Métricas"],
+)
+@app.post(
+    "/proyectos/{id_}/view",
+    tags=["Telemetría y Métricas"],
+)
+@app.post(
+    "/api/publicaciones/{id_}/view",
+    tags=["Telemetría y Métricas"],
+)
+@app.post(
+    "/publicaciones/{id_}/view",
+    tags=["Telemetría y Métricas"],
+)
+def registrar_vista_post(id_: str, response: Response):
+    """
+    Incrementa en 1 el contador de vistas del post y devuelve el nuevo total en JSON.
+    Devuelve 404 si la publicación no existe.
+    """
+    with get_db() as conn:
+        row = conn.execute("SELECT id, views, likes FROM publicaciones WHERE id = ?", (id_,)).fetchone()
+        if not row:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"La publicación con ID '{id_}' no existe.",
+            )
+        col_names = row.keys()
+        current_views = int(row["views"]) if "views" in col_names and row["views"] is not None else 0
+        current_likes = int(row["likes"]) if "likes" in col_names and row["likes"] is not None else 0
+        new_views = current_views + 1
+        conn.execute("UPDATE publicaciones SET views = ? WHERE id = ?", (new_views, id_))
+
+    response.headers["X-CMS-Service"] = "DevBlog-API-v1"
+    return {
+        "id": id_,
+        "views": new_views,
+        "likes": current_likes,
+        "total_views": new_views,
+        "mensaje": "Vista registrada correctamente.",
+    }
+
+
+@app.post(
+    "/api/posts/{id_}/like",
+    tags=["Telemetría y Métricas"],
+)
+@app.post(
+    "/posts/{id_}/like",
+    tags=["Telemetría y Métricas"],
+)
+@app.post(
+    "/api/proyectos/{id_}/like",
+    tags=["Telemetría y Métricas"],
+)
+@app.post(
+    "/proyectos/{id_}/like",
+    tags=["Telemetría y Métricas"],
+)
+@app.post(
+    "/api/publicaciones/{id_}/like",
+    tags=["Telemetría y Métricas"],
+)
+@app.post(
+    "/publicaciones/{id_}/like",
+    tags=["Telemetría y Métricas"],
+)
+def registrar_like_post(
+    id_: str,
+    response: Response,
+    body: Optional[LikeRequest] = None,
+    action: Optional[str] = Query(default=None),
+    liked: Optional[bool] = Query(default=None),
+    toggle: Optional[bool] = Query(default=None),
+):
+    """
+    Incrementa (o permite toggle/unlike si se envía un flag) el contador de likes del post.
+    Devuelve el nuevo total en JSON.
+    """
+    req_action = (body.action if body and body.action else action)
+    req_liked = (body.liked if body and body.liked is not None else liked)
+    req_toggle = (body.toggle if body and body.toggle is not None else toggle)
+
+    with get_db() as conn:
+        row = conn.execute("SELECT id, views, likes FROM publicaciones WHERE id = ?", (id_,)).fetchone()
+        if not row:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"La publicación con ID '{id_}' no existe.",
+            )
+        col_names = row.keys()
+        current_views = int(row["views"]) if "views" in col_names and row["views"] is not None else 0
+        current_likes = int(row["likes"]) if "likes" in col_names and row["likes"] is not None else 0
+
+        # Lógica de incremento o alternado (toggle / unlike)
+        if req_liked is False or req_action == "unlike":
+            new_likes = max(0, current_likes - 1)
+            is_liked = False
+        elif req_liked is True or req_action == "like":
+            new_likes = current_likes + 1
+            is_liked = True
+        elif req_toggle:
+            if current_likes > 0:
+                new_likes = current_likes - 1
+                is_liked = False
+            else:
+                new_likes = 1
+                is_liked = True
+        else:
+            # Por defecto incrementa en 1
+            new_likes = current_likes + 1
+            is_liked = True
+
+        conn.execute("UPDATE publicaciones SET likes = ? WHERE id = ?", (new_likes, id_))
+
+    response.headers["X-CMS-Service"] = "DevBlog-API-v1"
+    return {
+        "id": id_,
+        "likes": new_likes,
+        "views": current_views,
+        "liked": is_liked,
+        "total_likes": new_likes,
+        "mensaje": "Like actualizado correctamente.",
+    }
+
+
+@app.get(
+    "/api/analytics/summary",
+    tags=["Telemetría y Métricas"],
+)
+@app.get(
+    "/analytics/summary",
+    tags=["Telemetría y Métricas"],
+)
+def obtener_resumen_analytics(response: Response):
+    """
+    Devuelve un JSON con el resumen global de analítica para el panel de autor:
+    - total_views: suma de vistas de todos los posts.
+    - total_likes: suma de likes de todos los posts.
+    - top_posts: los 5 artículos con más vistas.
+    - views_by_tag: total de vistas agrupadas por etiqueta/tag.
+    """
+    with get_db() as conn:
+        rows = conn.execute("SELECT * FROM publicaciones ORDER BY views DESC, date DESC").fetchall()
+
+    all_posts = [row_to_post(r) for r in rows]
+    total_views = sum(p["views"] for p in all_posts)
+    total_likes = sum(p["likes"] for p in all_posts)
+
+    top_posts = [PublicacionOut(**p).model_dump() for p in all_posts[:5]]
+
+    views_by_tag: Dict[str, int] = {}
+    for p in all_posts:
+        views_count = p["views"]
+        for t in p.get("tags", []):
+            clean_t = t.strip()
+            if clean_t:
+                views_by_tag[clean_t] = views_by_tag.get(clean_t, 0) + views_count
+
+    sorted_views_by_tag = dict(sorted(views_by_tag.items(), key=lambda item: item[1], reverse=True))
+
+    payload = {
+        "total_views": total_views,
+        "total_likes": total_likes,
+        "top_posts": top_posts,
+        "views_by_tag": sorted_views_by_tag,
+    }
+    response.headers["X-CMS-Service"] = "DevBlog-API-v1"
+    response.headers["ETag"] = compute_etag(payload)
+    return payload
 
 
 # ---------------------------------------------------------------------------

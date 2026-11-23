@@ -29,6 +29,10 @@
       title: 'Perfil y Barra Lateral',
       subtitle: 'Edita tu tarjeta de perfil, las tecnologías del filtro y la sección En construcción.',
     },
+    metricas: {
+      title: 'Métricas / Analytics',
+      subtitle: 'Telemetría de visitas, likes y rendimiento de contenido en tiempo real.',
+    },
   };
 
   const state = {
@@ -79,6 +83,7 @@
 
     if (state.tab === 'gestor') renderTable();
     if (state.tab === 'perfil') renderProfileTab();
+    if (state.tab === 'metricas') renderAnalyticsTab();
   }
 
   window.addEventListener('hashchange', () => setTab(location.hash.slice(1)));
@@ -936,10 +941,186 @@
     UI.toast('Sección En construcción actualizada', 'success');
   });
 
+  /* ---------------------------------------------------------------
+   * Pestaña "Métricas / Analytics" (Telemetría de DevBlog)
+   * ------------------------------------------------------------- */
+  async function renderAnalyticsTab() {
+    const root = $('#analytics-root');
+    if (!root) return;
+
+    // Obtener datos consolidados desde la API de Analytics
+    const data = await Store.getAnalyticsSummary();
+    const totalViews = Number(data.total_views) || 0;
+    const totalLikes = Number(data.total_likes) || 0;
+    const topPosts = Array.isArray(data.top_posts) ? data.top_posts : [];
+    const viewsByTag = data.views_by_tag && typeof data.views_by_tag === 'object' ? data.views_by_tag : {};
+
+    const topPost = topPosts.length > 0 ? topPosts[0] : null;
+
+    // Calcular valores relativos para las barras de progreso
+    const tagEntries = Object.entries(viewsByTag);
+    const maxTagViews = tagEntries.length > 0 ? Math.max(...tagEntries.map(([, v]) => Number(v) || 0), 1) : 1;
+
+    root.innerHTML = `
+      <div class="analytics-toolbar">
+        <div class="analytics-status-info">
+          <span class="analytics-live-dot" aria-hidden="true"></span>
+          <span><strong>Telemetría activa</strong> · Métricas sincronizadas con FastAPI (8001)</span>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-refresh-analytics">
+          ↻ Actualizar métricas
+        </button>
+      </div>
+
+      <!-- Tarjetas de Resumen KPI -->
+      <div class="analytics-kpi-grid">
+        <div class="kpi-card kpi-card--views">
+          <div class="kpi-card-header">
+            <span class="kpi-title">Vistas Totales</span>
+            <span class="kpi-icon-wrap" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
+              </svg>
+            </span>
+          </div>
+          <div class="kpi-value">${totalViews.toLocaleString('es-MX')}</div>
+          <p class="kpi-desc">Total de lecturas registradas en todos los artículos publicados.</p>
+        </div>
+
+        <div class="kpi-card kpi-card--likes">
+          <div class="kpi-card-header">
+            <span class="kpi-title">Likes Totales</span>
+            <span class="kpi-icon-wrap" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+              </svg>
+            </span>
+          </div>
+          <div class="kpi-value">${totalLikes.toLocaleString('es-MX')}</div>
+          <p class="kpi-desc">Reacciones positivas e interés directo de la comunidad lectora.</p>
+        </div>
+
+        <div class="kpi-card kpi-card--top">
+          <div class="kpi-card-header">
+            <span class="kpi-title">Artículo más popular</span>
+            <span class="kpi-icon-wrap" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+              </svg>
+            </span>
+          </div>
+          ${
+            topPost
+              ? `<p class="kpi-top-post-title" title="${esc(topPost.title)}">${esc(topPost.title)}</p>
+                 <div class="kpi-top-post-stats">
+                   <span>👁️ <strong>${Number(topPost.views) || 0}</strong> vistas</span>
+                   <span>❤️ <strong>${Number(topPost.likes) || 0}</strong> likes</span>
+                 </div>`
+              : `<p class="kpi-value" style="font-size:1.4rem;">—</p>
+                 <p class="kpi-desc">Sin artículos con lecturas registradas aún.</p>`
+          }
+        </div>
+      </div>
+
+      <!-- Cuadrícula 2 Columnas: Top 5 Posts y Rendimiento por Tag -->
+      <div class="analytics-grid-2">
+        <!-- Columna 1: Top 5 Artículos -->
+        <div class="analytics-card">
+          <div class="analytics-card-head">
+            <h2 class="analytics-card-title">Top 5 Artículos más leídos</h2>
+            <span class="analytics-badge">${topPosts.length} posts</span>
+          </div>
+
+          ${
+            topPosts.length === 0
+              ? `<div class="empty-state" style="padding:24px 12px;">
+                   <p class="empty-state-title">Sin publicaciones</p>
+                   <p>Aún no hay artículos publicados en el blog.</p>
+                 </div>`
+              : `<div class="ranking-list">
+                   ${topPosts
+                     .map(
+                       (p, idx) => `
+                     <div class="ranking-item">
+                       <span class="ranking-pos">${idx + 1}</span>
+                       <div class="ranking-content">
+                         <span class="ranking-title">
+                           <a href="post.html?id=${encodeURIComponent(p.id)}" target="_blank" title="${esc(p.title)}">
+                             ${esc(p.title)}
+                           </a>
+                         </span>
+                         <div class="ranking-meta">
+                           <span class="tag ${UI.tagClass(p.category || (p.tags && p.tags[0]) || 'Proyecto')}" style="padding:1px 6px;font-size:0.68rem;">
+                             ${esc(p.category || (p.tags && p.tags[0]) || 'General')}
+                           </span>
+                           <span>${Utils.formatDate(p.date)}</span>
+                         </div>
+                       </div>
+                       <div class="ranking-stats">
+                         <span class="ranking-stat-pill" title="${p.views || 0} vistas">👁️ ${p.views || 0}</span>
+                         <span class="ranking-stat-pill" title="${p.likes || 0} likes">❤️ ${p.likes || 0}</span>
+                       </div>
+                     </div>`
+                     )
+                     .join('')}
+                 </div>`
+          }
+        </div>
+
+        <!-- Columna 2: Rendimiento por Etiqueta (Barras con CSS puro) -->
+        <div class="analytics-card">
+          <div class="analytics-card-head">
+            <h2 class="analytics-card-title">Rendimiento por Etiqueta</h2>
+            <span class="analytics-badge">${tagEntries.length} tecnologías</span>
+          </div>
+
+          ${
+            tagEntries.length === 0
+              ? `<div class="empty-state" style="padding:24px 12px;">
+                   <p class="empty-state-title">Sin etiquetas con vistas</p>
+                   <p>Las vistas por tecnología aparecerán conforme los lectores visiten los artículos.</p>
+                 </div>`
+              : `<div class="tag-bars-list">
+                   ${tagEntries
+                     .map(([tag, views]) => {
+                       const v = Number(views) || 0;
+                       const pct = Math.round((v / maxTagViews) * 100);
+                       const share = totalViews > 0 ? Math.round((v / totalViews) * 100) : 0;
+                       return `
+                         <div class="tag-bar-item">
+                           <div class="tag-bar-header">
+                             <span class="tag-bar-name">
+                               <span class="tag ${UI.tagClass(tag)}" style="padding:1px 6px;font-size:0.68rem;">#${esc(tag)}</span>
+                             </span>
+                             <span class="tag-bar-metrics">
+                               <strong>${v.toLocaleString('es-MX')}</strong> vistas
+                               <span style="color:var(--text-faint);">(${share}%)</span>
+                             </span>
+                           </div>
+                           <div class="tag-progress-track" title="${v} vistas (${share}% del total)">
+                             <div class="tag-progress-fill" style="width: ${Math.max(4, pct)}%;"></div>
+                           </div>
+                         </div>`;
+                     })
+                     .join('')}
+                 </div>`
+          }
+        </div>
+      </div>
+    `;
+
+    $('#btn-refresh-analytics')?.addEventListener('click', async () => {
+      await Store.syncFromApi();
+      renderAnalyticsTab();
+      UI.toast('Métricas actualizadas desde la API', 'success');
+    });
+  }
+
   function renderAll() {
     renderMyPosts();
     renderTable();
     renderProfileTab();
+    if (state.tab === 'metricas') renderAnalyticsTab();
     if (UI.syncAvatars) UI.syncAvatars();
   }
 

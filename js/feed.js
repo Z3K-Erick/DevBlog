@@ -431,5 +431,6 @@
   }
 
   window.addEventListener('storage', render);
+  window.addEventListener('devblog:synced', render);
   render();
 })();

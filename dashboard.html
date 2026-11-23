@@ -51,6 +51,13 @@
           </svg>
           <span>Perfil y Sidebar</span>
         </button>
+
+        <button type="button" class="dash-nav-btn" data-tab="metricas">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/>
+          </svg>
+          <span>Métricas / Analytics</span>
+        </button>
       </nav>
 
       <div class="dash-sidebar-bottom">
@@ -109,6 +116,9 @@
           </button>
           <button type="button" class="dash-tab" role="tab" aria-selected="false" data-tab="perfil">
             Perfil y Sidebar
+          </button>
+          <button type="button" class="dash-tab" role="tab" aria-selected="false" data-tab="metricas">
+            Métricas / Analytics
           </button>
         </div>
 
@@ -399,6 +409,18 @@
                 <button type="submit" class="btn btn-primary btn-sm">Guardar En construcción</button>
               </div>
             </form>
+          </div>
+        </section>
+
+        <!-- ==================================================================
+             PESTAÑA 4: "MÉTRICAS / ANALYTICS" (TELEMETRÍA Y RENDIMIENTO)
+             ================================================================== -->
+        <section class="tab-panel" id="panel-metricas" aria-label="Métricas y Analytics" hidden>
+          <div class="analytics-shell" id="analytics-root">
+            <div class="empty-state">
+              <p class="empty-state-title">Cargando métricas...</p>
+              <p>Conectando con la API de telemetría de {EG} DevBlog.</p>
+            </div>
           </div>
         </section>
       </main>

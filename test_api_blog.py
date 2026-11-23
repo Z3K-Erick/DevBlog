@@ -172,6 +172,108 @@ def test_10_crud_ideas_y_configuracion():
     assert r_cfg.json()["profile"]["name"] == "Erick"
 
 
+def test_11_incrementar_vistas_post():
+    # Obtener un post existente (proyecto-devblog)
+    r_init = client.get("/proyectos/proyecto-devblog")
+    assert r_init.status_code == 200
+    vistas_iniciales = r_init.json().get("views", 0)
+
+    # Primer incremento de vista
+    r_view1 = client.post("/api/posts/proyecto-devblog/view")
+    assert r_view1.status_code == 200
+    data1 = r_view1.json()
+    assert data1["id"] == "proyecto-devblog"
+    assert data1["views"] == vistas_iniciales + 1
+
+    # Segundo incremento de vista
+    r_view2 = client.post("/api/posts/proyecto-devblog/view")
+    assert r_view2.status_code == 200
+    data2 = r_view2.json()
+    assert data2["views"] == vistas_iniciales + 2
+
+    # Verificar que el post refleje las nuevas vistas en GET
+    r_get = client.get("/proyectos/proyecto-devblog")
+    assert r_get.status_code == 200
+    assert r_get.json()["views"] == vistas_iniciales + 2
+
+    # Vista en post inexistente debe responder 404
+    r_404 = client.post("/api/posts/post-inexistente-xyz/view")
+    assert r_404.status_code == 404
+
+
+def test_12_toggle_likes_post():
+    r_init = client.get("/proyectos/proyecto-devblog")
+    assert r_init.status_code == 200
+    likes_iniciales = r_init.json().get("likes", 0)
+
+    # 1. Incremento directo de like (sin body)
+    r_like1 = client.post("/api/posts/proyecto-devblog/like")
+    assert r_like1.status_code == 200
+    assert r_like1.json()["likes"] == likes_iniciales + 1
+    assert r_like1.json()["liked"] is True
+
+    # 2. Incremento explícito con body {"liked": True}
+    r_like2 = client.post("/api/posts/proyecto-devblog/like", json={"liked": True})
+    assert r_like2.status_code == 200
+    assert r_like2.json()["likes"] == likes_iniciales + 2
+    assert r_like2.json()["liked"] is True
+
+    # 3. Disminución / unlike con body {"liked": False}
+    r_unlike = client.post("/api/posts/proyecto-devblog/like", json={"liked": False})
+    assert r_unlike.status_code == 200
+    assert r_unlike.json()["likes"] == likes_iniciales + 1
+    assert r_unlike.json()["liked"] is False
+
+    # 4. Alternado con action="unlike"
+    r_unlike2 = client.post("/api/posts/proyecto-devblog/like", json={"action": "unlike"})
+    assert r_unlike2.status_code == 200
+    assert r_unlike2.json()["likes"] == likes_iniciales
+
+    # 5. Like en post inexistente responde 404
+    r_404 = client.post("/api/posts/post-inexistente-xyz/like")
+    assert r_404.status_code == 404
+
+
+def test_13_resumen_analytics_summary():
+    # Asegurar que existan datos creando un post específico con tags
+    client.post(
+        "/proyectos",
+        json={
+            "title": "Post para validar Analytics",
+            "content": "Contenido de analítica y métricas para pruebas.",
+            "kind": "Guía",
+            "tags": ["Analytics", "FastAPI"],
+            "status": "publicado",
+        },
+    )
+
+    r = client.get("/api/analytics/summary")
+    assert r.status_code == 200
+    data = r.json()
+
+    assert "total_views" in data
+    assert "total_likes" in data
+    assert "top_posts" in data
+    assert "views_by_tag" in data
+
+    assert isinstance(data["total_views"], int)
+    assert isinstance(data["total_likes"], int)
+    assert isinstance(data["top_posts"], list)
+    assert isinstance(data["views_by_tag"], dict)
+
+    assert len(data["top_posts"]) <= 5
+    if len(data["top_posts"]) > 0:
+        top = data["top_posts"][0]
+        assert "views" in top
+        assert "likes" in top
+        assert "title" in top
+
+    # Verificar que el alias sin /api funcione igual
+    r_alias = client.get("/analytics/summary")
+    assert r_alias.status_code == 200
+    assert r_alias.json()["total_views"] == data["total_views"]
+
+
 if __name__ == "__main__":
     import pytest
 

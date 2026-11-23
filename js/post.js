@@ -29,10 +29,30 @@
 
     document.title = `${post.title} — {EG} DevBlog`;
 
+    // Telemetría: Registro automático de vista única por sesión
+    const viewedKey = `devblog:viewed:${post.id}`;
+    if (!sessionStorage.getItem(viewedKey)) {
+      sessionStorage.setItem(viewedKey, '1');
+      Store.incrementPostView(post.id).then((res) => {
+        if (res && typeof res.views === 'number') {
+          post.views = res.views;
+          const vVal = document.getElementById('post-views-val');
+          if (vVal) vVal.textContent = res.views;
+          const vKicker = document.getElementById('post-views-kicker');
+          if (vKicker) vKicker.textContent = res.views;
+        }
+      });
+    }
+
     const { html, headings } = Markdown.render(post.content);
     const kindLabel = (post.kind || 'Proyecto').toUpperCase();
     const dateLabel = Utils.formatDate(post.date).toUpperCase();
     const profile = Store.getSiteConfig().profile;
+
+    const likedKey = `devblog:liked:${post.id}`;
+    let isLiked = localStorage.getItem(likedKey) === 'true';
+    let currentLikes = Number(post.likes) || 0;
+    const viewsCount = Number(post.views) || 0;
 
     root.innerHTML = `
       <a href="index.html" class="back-link">← Volver al feed</a>
@@ -42,7 +62,10 @@
           ${post.status !== 'publicado' ? '<div class="draft-banner">Borrador — vista previa privada del autor.</div>' : ''}
 
           <header class="post-header">
-            <p class="featured-kicker">${esc(kindLabel)} · PUBLICADO EL ${esc(dateLabel)} · ${esc(post.readTime.toUpperCase())}</p>
+            <p class="featured-kicker">
+              ${esc(kindLabel)} · PUBLICADO EL ${esc(dateLabel)} · ${esc(post.readTime.toUpperCase())}
+              · <span class="post-metric-inline" title="${viewsCount} vistas"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg> <span id="post-views-kicker">${viewsCount}</span> vistas</span>
+            </p>
             <h1 class="post-title">${esc(post.title)}</h1>
             ${post.excerpt ? `<p class="post-lead">${esc(post.excerpt)}</p>` : ''}
             <div class="post-author">
@@ -58,6 +81,28 @@
           </header>
 
           <div class="prose" id="post-content">${html}</div>
+
+          <!-- Barra de interacción (Like interactivo y vistas) -->
+          <div class="post-actions-bar">
+            <div class="post-actions-left">
+              <button type="button" class="post-like-btn${isLiked ? ' is-liked' : ''}" id="post-like-btn" aria-label="Dar me gusta" aria-pressed="${isLiked}">
+                <svg class="like-icon" width="16" height="16" viewBox="0 0 24 24" fill="${isLiked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                </svg>
+                <span class="like-text">${isLiked ? 'Te gusta' : 'Me gusta'}</span>
+                <span class="like-count" id="post-like-count">${currentLikes}</span>
+              </button>
+
+              <span class="post-views-badge" title="Vistas registradas">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
+                </svg>
+                <span id="post-views-val">${viewsCount}</span> vistas
+              </span>
+            </div>
+
+            <button type="button" class="share-link" id="copy-post-link-bar">↗ Compartir</button>
+          </div>
 
           <aside class="repo-card">
             <div class="repo-card-info">
@@ -97,14 +142,47 @@
         </aside>
       </div>`;
 
-    document.getElementById('copy-post-link')?.addEventListener('click', async () => {
+    // Manejo de Like interactivo
+    const likeBtn = document.getElementById('post-like-btn');
+    if (likeBtn) {
+      likeBtn.addEventListener('click', async () => {
+        isLiked = !isLiked;
+        localStorage.setItem(likedKey, String(isLiked));
+
+        if (isLiked) {
+          currentLikes += 1;
+        } else {
+          currentLikes = Math.max(0, currentLikes - 1);
+        }
+
+        likeBtn.classList.toggle('is-liked', isLiked);
+        likeBtn.setAttribute('aria-pressed', String(isLiked));
+        const svgIcon = likeBtn.querySelector('.like-icon');
+        if (svgIcon) svgIcon.setAttribute('fill', isLiked ? 'currentColor' : 'none');
+        const textSpan = likeBtn.querySelector('.like-text');
+        if (textSpan) textSpan.textContent = isLiked ? 'Te gusta' : 'Me gusta';
+        const countSpan = document.getElementById('post-like-count');
+        if (countSpan) countSpan.textContent = currentLikes;
+
+        // Llamada silenciosa a la API para persistir en backend
+        const res = await Store.togglePostLike(post.id, isLiked);
+        if (res && typeof res.likes === 'number') {
+          currentLikes = res.likes;
+          if (countSpan) countSpan.textContent = currentLikes;
+        }
+      });
+    }
+
+    const shareAction = async () => {
       try {
         await navigator.clipboard.writeText(window.location.href);
         toast('Enlace copiado al portapapeles', 'success');
       } catch {
         toast('No se pudo copiar el enlace', 'error');
       }
-    });
+    };
+    document.getElementById('copy-post-link')?.addEventListener('click', shareAction);
+    document.getElementById('copy-post-link-bar')?.addEventListener('click', shareAction);
 
     const links = [...document.querySelectorAll('.toc-link')];
     if (links.length && 'IntersectionObserver' in window) {

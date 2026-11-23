@@ -124,6 +124,8 @@
       image: 'assets/images/thumb-design.svg',
       status: 'publicado',
       date: '2026-11-02T12:00:00',
+      views: 0,
+      likes: 0,
       content: [
         'Este es el primer post oficial de mi DevBlog: una plataforma creada desde cero para documentar mis proyectos, prácticas y avances mientras estudio ingeniería.',
         '',
@@ -195,6 +197,8 @@
       ...post,
       kind,
       tags,
+      views: Number(post.views) || 0,
+      likes: Number(post.likes) || 0,
       category: tags[0] || 'General',
       excerpt: post.excerpt || makeExcerpt(post.content),
       readTime: readTime(post.content),
@@ -364,6 +368,88 @@
         });
       }
       return removed;
+    },
+
+    /* -------------------------------------------------------------
+     * Telemetría y Métricas (Vistas, Likes y Analítica)
+     * ----------------------------------------------------------- */
+    async incrementPostView(id) {
+      if (!id) return null;
+      try {
+        const res = await apiRequest(`/api/posts/${encodeURIComponent(id)}/view`, {
+          method: 'POST',
+        });
+        if (res && typeof res.views === 'number') {
+          const posts = read();
+          const idx = posts.findIndex((p) => p.id === id);
+          if (idx !== -1) {
+            posts[idx].views = res.views;
+            write(posts);
+          }
+          return res;
+        }
+      } catch (err) {
+        // Manejo silencioso: la telemetría nunca interrumpe la navegación
+      }
+      return null;
+    },
+
+    async togglePostLike(id, liked) {
+      if (!id) return null;
+      try {
+        const payload = typeof liked === 'boolean' ? { liked } : { toggle: true };
+        const res = await apiRequest(`/api/posts/${encodeURIComponent(id)}/like`, {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        });
+        if (res && typeof res.likes === 'number') {
+          const posts = read();
+          const idx = posts.findIndex((p) => p.id === id);
+          if (idx !== -1) {
+            posts[idx].likes = res.likes;
+            write(posts);
+          }
+          return res;
+        }
+      } catch (err) {
+        // Manejo silencioso
+      }
+      return null;
+    },
+
+    async getAnalyticsSummary() {
+      try {
+        const res = await apiRequest('/api/analytics/summary');
+        if (res && typeof res.total_views === 'number') {
+          return res;
+        }
+      } catch (err) {
+        // Fallback silencioso a cálculo local
+      }
+
+      // Cálculo de respaldo desde el estado local si la API está inaccesible
+      const allPosts = this.all();
+      const totalViews = allPosts.reduce((acc, p) => acc + (Number(p.views) || 0), 0);
+      const totalLikes = allPosts.reduce((acc, p) => acc + (Number(p.likes) || 0), 0);
+      const topPosts = [...allPosts]
+        .sort((a, b) => (Number(b.views) || 0) - (Number(a.views) || 0))
+        .slice(0, 5);
+
+      const viewsByTag = {};
+      allPosts.forEach((p) => {
+        const v = Number(p.views) || 0;
+        (p.tags || []).forEach((t) => {
+          const clean = String(t).trim();
+          if (clean) viewsByTag[clean] = (viewsByTag[clean] || 0) + v;
+        });
+      });
+
+      return {
+        total_views: totalViews,
+        total_likes: totalLikes,
+        top_posts: topPosts,
+        views_by_tag: viewsByTag,
+      };
     },
 
     tagCounts(posts = this.published()) {
