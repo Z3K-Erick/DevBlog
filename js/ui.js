@@ -12,6 +12,7 @@
 
   const { Auth, Utils } = window.DevBlog;
   const esc = Utils.escapeHtml;
+  const getCmsUrl = () => window.DEVBLOG_CMS_URL || 'CMS/dashboard.html';
 
   const svg = (paths, size = 16) =>
     `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
@@ -141,7 +142,7 @@
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       if (Auth.login(form.user.value, form.password.value)) {
-        window.location.href = 'dashboard.html';
+        window.location.href = getCmsUrl();
         return;
       }
       error.hidden = false;
@@ -155,7 +156,7 @@
 
   function openLogin() {
     if (Auth.isAdmin()) {
-      window.location.href = 'dashboard.html';
+      window.location.href = getCmsUrl();
       return;
     }
     const modal = getLoginModal();
@@ -437,7 +438,7 @@
     if (avatar) {
       avatar.classList.toggle('is-admin', Auth.isAdmin());
       avatar.addEventListener('click', () => {
-        if (Auth.isAdmin()) window.location.href = 'dashboard.html';
+        if (Auth.isAdmin()) window.location.href = getCmsUrl();
       });
     }
 
