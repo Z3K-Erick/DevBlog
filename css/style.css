@@ -79,10 +79,6 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-body.has-modal {
-  overflow: hidden;
-}
-
 img,
 svg {
   display: block;
@@ -642,18 +638,6 @@ a.chip:hover {
   border: 1px solid rgba(34, 197, 94, 0.3);
 }
 
-.status--draft {
-  color: #fbbf24;
-  background: rgba(245, 158, 11, 0.12);
-  border: 1px solid rgba(245, 158, 11, 0.3);
-}
-
-.status--editing {
-  color: var(--primary-text);
-  background: var(--primary-soft);
-  border: 1px solid rgba(99, 102, 241, 0.35);
-}
-
 /* --------------------------------------------------------------------------
    Tarjetas y estados vacíos
    -------------------------------------------------------------------------- */
@@ -690,111 +674,6 @@ a.chip:hover {
 .empty-state--page {
   margin: 64px auto;
   max-width: 520px;
-}
-
-/* --------------------------------------------------------------------------
-   Modales
-   -------------------------------------------------------------------------- */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  display: grid;
-  place-items: center;
-  padding: 16px;
-  background: rgba(2, 6, 23, 0.72);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  opacity: 0;
-  transition: opacity var(--ease);
-}
-
-.modal-overlay.is-open {
-  opacity: 1;
-}
-
-.modal {
-  width: 100%;
-  max-width: 400px;
-  background: var(--surface);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75);
-  transform: translateY(8px) scale(0.98);
-  transition: transform var(--ease);
-}
-
-.modal-overlay.is-open .modal {
-  transform: none;
-}
-
-.modal--sm {
-  max-width: 420px;
-}
-
-.modal-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 20px 20px 0;
-}
-
-.modal-title {
-  font-size: 1.05rem;
-  font-weight: 700;
-}
-
-.modal-subtitle,
-.modal-text {
-  margin-top: 4px;
-  color: var(--text-muted);
-  font-size: 0.85rem;
-}
-
-.modal-text strong {
-  color: var(--text);
-}
-
-.modal-body {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 20px;
-}
-
-.alert-head {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.alert-badge {
-  display: inline-grid;
-  place-items: center;
-  flex-shrink: 0;
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius-sm);
-  background: rgba(239, 68, 68, 0.14);
-  border: 1px solid rgba(239, 68, 68, 0.35);
-  color: var(--danger);
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  padding: 0 20px 20px;
-}
-
-.shake {
-  animation: shake 0.35s;
-}
-
-@keyframes shake {
-  20%, 60% { transform: translateX(-6px); }
-  40%, 80% { transform: translateX(6px); }
 }
 
 /* --------------------------------------------------------------------------

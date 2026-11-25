@@ -1,8 +1,8 @@
 /**
- * DevBlog — Componentes de interfaz compartidos
+ * DevBlog — Componentes de interfaz compartidos (Landing pública)
  * ---------------------------------------------------------------
- * - Toasts, modales base y sincronización de avatares en el header.
- * - Componente reutilizable PostCard para la vista pública.
+ * - Toasts, buscador del header y sincronización de avatares.
+ * - Componente reutilizable PostCard para el feed público.
  */
 (function () {
   'use strict';
@@ -14,11 +14,6 @@
     `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
 
   const Icons = {
-    edit: svg('<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>', 14),
-    trash: svg('<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/>', 14),
-    close: svg('<path d="M18 6 6 18M6 6l12 12"/>', 18),
-    alert: svg('<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/>', 18),
-    image: svg('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/>', 16),
     clock: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', 13),
     eye: svg('<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>', 13),
     heart: svg('<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>', 13),
@@ -47,108 +42,7 @@
   }
 
   /* ---------------------------------------------------------------
-   * Modales base
-   * ------------------------------------------------------------- */
-  let lastFocused = null;
-
-  function createModal(id, html, onDismiss) {
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.id = id;
-    overlay.hidden = true;
-    overlay.innerHTML = html;
-    overlay._onDismiss = onDismiss;
-
-    overlay.addEventListener('mousedown', (e) => {
-      if (e.target === overlay) dismissModal(overlay);
-    });
-    overlay.querySelectorAll('[data-dismiss]').forEach((btn) =>
-      btn.addEventListener('click', () => dismissModal(overlay))
-    );
-    document.body.appendChild(overlay);
-    return overlay;
-  }
-
-  function openModal(overlay) {
-    lastFocused = document.activeElement;
-    overlay.hidden = false;
-    void overlay.offsetWidth;
-    overlay.classList.add('is-open');
-    document.body.classList.add('has-modal');
-    const focusTarget = overlay.querySelector('[data-autofocus]') || overlay.querySelector('input, button');
-    focusTarget?.focus();
-  }
-
-  function closeModal(overlay) {
-    overlay.classList.remove('is-open');
-    document.body.classList.remove('has-modal');
-    setTimeout(() => (overlay.hidden = true), 180);
-    lastFocused?.focus?.();
-  }
-
-  function dismissModal(overlay) {
-    closeModal(overlay);
-    overlay._onDismiss?.();
-  }
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key !== 'Escape') return;
-    const open = document.querySelector('.modal-overlay.is-open');
-    if (open) dismissModal(open);
-  });
-
-  /* ---------------------------------------------------------------
-   * Modal 1 (Figma): ¿Eliminar publicación?
-   * ------------------------------------------------------------- */
-  let deleteModal = null;
-  let resolveDelete = null;
-
-  function settleDelete(value) {
-    resolveDelete?.(value);
-    resolveDelete = null;
-  }
-
-  function getDeleteModal() {
-    if (deleteModal) return deleteModal;
-
-    deleteModal = createModal(
-      'delete-modal',
-      `<div class="modal modal--sm" role="alertdialog" aria-modal="true" aria-labelledby="delete-title" aria-describedby="delete-desc">
-        <div class="modal-body">
-          <div class="alert-head">
-            <span class="alert-badge">${Icons.alert}</span>
-            <h2 class="modal-title" id="delete-title">¿Eliminar publicación?</h2>
-          </div>
-          <p class="modal-text" id="delete-desc">
-            Esta acción eliminará <strong data-post-title></strong> de forma permanente y no se podrá recuperar del feed ni del gestor.
-          </p>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary btn-sm" data-dismiss data-autofocus>Cancelar</button>
-          <button type="button" class="btn btn-danger btn-sm" data-confirm>Sí, eliminar</button>
-        </div>
-      </div>`,
-      () => settleDelete(false)
-    );
-
-    deleteModal.querySelector('[data-confirm]').addEventListener('click', () => {
-      closeModal(deleteModal);
-      settleDelete(true);
-    });
-
-    return deleteModal;
-  }
-
-  function confirmDelete(title) {
-    settleDelete(false);
-    const modal = getDeleteModal();
-    modal.querySelector('[data-post-title]').textContent = `“${title}”`;
-    openModal(modal);
-    return new Promise((resolve) => (resolveDelete = resolve));
-  }
-
-  /* ---------------------------------------------------------------
-   * Colores de tags y estados
+   * Colores de tags
    * ------------------------------------------------------------- */
   function tagClass(tag) {
     const key = Utils.normalizeText(tag);
@@ -159,16 +53,10 @@
     return 'tag--c0';
   }
 
-  function statusBadge(status) {
-    return status === 'publicado'
-      ? '<span class="status status--published">Publicado</span>'
-      : '<span class="status status--draft">Borrador</span>';
-  }
-
   /* ---------------------------------------------------------------
-   * PostCard reutilizable (Público y Mi Feed)
+   * PostCard público
    * ------------------------------------------------------------- */
-  function postCard(post, { variant = 'row', admin = false } = {}) {
+  function postCard(post, { variant = 'row' } = {}) {
     const url = `post.html?id=${encodeURIComponent(post.id)}`;
     // Si post.layout está definido ('side' o 'top'), se respeta fielmente.
     // Si no está definido, se adapta de forma inteligente según la relación de aspecto.
@@ -176,7 +64,7 @@
     const autoVariant = explicitLayout || (variant === 'featured' ? 'featured' : 'row');
     const onloadAttr = explicitLayout
       ? ''
-      : `onload="if(!this.closest('.post-card--editing')&&this.naturalWidth&&this.naturalHeight){const feat=this.naturalWidth/this.naturalHeight>=1.9;this.closest('.post-card').classList.toggle('post-card--featured',feat);this.closest('.post-card').classList.toggle('post-card--row',!feat);}"`;
+      : `onload="if(this.naturalWidth&&this.naturalHeight){const feat=this.naturalWidth/this.naturalHeight>=1.9;this.closest('.post-card').classList.toggle('post-card--featured',feat);this.closest('.post-card').classList.toggle('post-card--row',!feat);}"`;
     const media = post.image
       ? `<a class="post-card-media" href="${url}" tabindex="-1" aria-hidden="true"><img src="${esc(post.image)}" alt="" loading="lazy" ${onloadAttr}></a>`
       : '';
@@ -186,7 +74,7 @@
     const viewsCount = Number(post.views) || 0;
     const likesCount = Number(post.likes) || 0;
 
-    if (autoVariant === 'featured' && !admin) {
+    if (autoVariant === 'featured') {
       return `
         <article class="post-card post-card--featured" data-id="${esc(post.id)}">
           ${media}
@@ -211,24 +99,8 @@
         </article>`;
     }
 
-    const actions = admin
-      ? `<div class="post-card-actions">
-          <button type="button" class="btn btn-secondary btn-sm" data-action="edit" data-id="${esc(post.id)}">${Icons.edit}<span>Editar</span></button>
-          <button type="button" class="btn btn-secondary btn-sm btn-danger-soft" data-action="delete" data-id="${esc(post.id)}">${Icons.trash}<span>Eliminar</span></button>
-        </div>`
-      : '';
-
-    const metaLine = admin
-      ? `<div class="post-card-top">
-          ${statusBadge(post.status)}
-          ${actions}
-        </div>
-        <p class="post-kicker">${esc(kindLabel)} · ${esc(dateLabel)} · ${esc(post.readTime.toUpperCase())} · <span class="post-meta-stat" title="${viewsCount} vistas">${Icons.eye} ${viewsCount}</span> · <span class="post-meta-stat" title="${likesCount} likes">${Icons.heart} ${likesCount}</span></p>`
-      : `<p class="post-kicker">${esc(kindLabel)} · ${esc(dateLabel)} · ${esc(post.readTime.toUpperCase())} · <span class="post-meta-stat" title="${viewsCount} vistas">${Icons.eye} ${viewsCount}</span> · <span class="post-meta-stat" title="${likesCount} likes">${Icons.heart} ${likesCount}</span></p>`;
-
-    const footerLeft = admin
-      ? `<span class="muted">${post.status === 'publicado' ? 'Visible en el feed público' : 'Guardado como borrador'}</span>`
-      : `<div class="chip-list">${post.tags.map((t) => `<span class="tag ${tagClass(t)}">${esc(t)}</span>`).join('')}</div>`;
+    const metaLine = `<p class="post-kicker">${esc(kindLabel)} · ${esc(dateLabel)} · ${esc(post.readTime.toUpperCase())} · <span class="post-meta-stat" title="${viewsCount} vistas">${Icons.eye} ${viewsCount}</span> · <span class="post-meta-stat" title="${likesCount} likes">${Icons.heart} ${likesCount}</span></p>`;
+    const footerLeft = `<div class="chip-list">${post.tags.map((t) => `<span class="tag ${tagClass(t)}">${esc(t)}</span>`).join('')}</div>`;
 
     return `
       <article class="post-card post-card--row${post.image ? '' : ' post-card--no-media'}" data-id="${esc(post.id)}">
@@ -237,7 +109,6 @@
           ${metaLine}
           <h3 class="post-card-title"><a href="${url}">${esc(post.title)}</a></h3>
           ${post.excerpt ? `<p class="post-card-excerpt">${esc(post.excerpt)}</p>` : ''}
-          ${admin ? `<div class="chip-list">${post.tags.map((t) => `<span class="tag ${tagClass(t)}">${esc(t)}</span>`).join('')}</div>` : ''}
           <div class="post-card-footer">
             ${footerLeft}
             <a class="link-arrow" href="${url}">Leer post <span aria-hidden="true">→</span></a>
@@ -247,109 +118,12 @@
   }
 
   /* ---------------------------------------------------------------
-   * TagInput
-   * ------------------------------------------------------------- */
-  function TagInput(root, initial = []) {
-    let tags = [...initial];
-    root.classList.add('tag-input');
-    root.innerHTML =
-      '<div class="tag-input-list"></div>' +
-      '<input type="text" class="tag-input-field" placeholder="+ Agregar tag y presiona Enter" aria-label="Agregar etiqueta">';
-
-    const list = root.querySelector('.tag-input-list');
-    const field = root.querySelector('.tag-input-field');
-
-    const render = () => {
-      list.innerHTML = tags
-        .map(
-          (t, i) =>
-            `<span class="chip chip--removable">${esc(t)}<button type="button" data-index="${i}" aria-label="Quitar ${esc(t)}">×</button></span>`
-        )
-        .join('');
-    };
-
-    const add = (value) => {
-      const tag = value.trim().replace(/^#/, '').replace(/,/g, '');
-      if (tag && !tags.some((t) => t.toLowerCase() === tag.toLowerCase())) {
-        tags.push(tag);
-        render();
-      }
-    };
-
-    const commit = () => {
-      if (field.value.trim()) add(field.value);
-      field.value = '';
-    };
-
-    field.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ',') {
-        e.preventDefault();
-        commit();
-      } else if (e.key === 'Backspace' && !field.value && tags.length) {
-        tags.pop();
-        render();
-      }
-    });
-    field.addEventListener('blur', commit);
-    list.addEventListener('click', (e) => {
-      const btn = e.target.closest('button[data-index]');
-      if (!btn) return;
-      tags.splice(Number(btn.dataset.index), 1);
-      render();
-      field.focus();
-    });
-    root.addEventListener('click', (e) => {
-      if (e.target === root || e.target === list) field.focus();
-    });
-
-    render();
-
-    return {
-      get: () => (commit(), [...tags]),
-      set: (next) => ((tags = [...next]), render()),
-      clear: () => ((tags = ['React', 'UI/UX', 'Proyecto']), (field.value = ''), render()),
-    };
-  }
-
-  /* ---------------------------------------------------------------
-   * Lectura de imagen a DataURL
-   * ------------------------------------------------------------- */
-  function readImage(file, maxWidth = 1200) {
-    return new Promise((resolve, reject) => {
-      if (!file || !file.type.startsWith('image/')) {
-        reject(new Error('Selecciona un archivo de imagen válido.'));
-        return;
-      }
-      const reader = new FileReader();
-      reader.onerror = () => reject(new Error('No se pudo leer la imagen.'));
-      reader.onload = () => {
-        if (file.type === 'image/svg+xml' || file.type === 'image/gif') {
-          resolve(reader.result);
-          return;
-        }
-        const img = new Image();
-        img.onerror = () => reject(new Error('Imagen no válida.'));
-        img.onload = () => {
-          const scale = Math.min(1, maxWidth / img.width);
-          const canvas = document.createElement('canvas');
-          canvas.width = Math.round(img.width * scale);
-          canvas.height = Math.round(img.height * scale);
-          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-          resolve(canvas.toDataURL('image/jpeg', 0.82));
-        };
-        img.src = reader.result;
-      };
-      reader.readAsDataURL(file);
-    });
-  }
-
-  /* ---------------------------------------------------------------
    * Sincronización de foto de perfil y Header
    * ------------------------------------------------------------- */
   function syncAvatars() {
     const src = window.DevBlog.Store.getAvatar();
     document
-      .querySelectorAll('.avatar-btn img, .profile-avatar-circle img, .post-author-avatar, .dash-user img, [data-user-avatar]')
+      .querySelectorAll('.avatar-btn img, .profile-avatar-circle img, .post-author-avatar, [data-user-avatar]')
       .forEach((img) => {
         img.src = src;
       });
@@ -391,12 +165,8 @@
   window.UI = {
     Icons,
     toast,
-    confirmDelete,
     postCard,
-    statusBadge,
     tagClass,
-    TagInput,
-    readImage,
     syncAvatars,
   };
 })();

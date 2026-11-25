@@ -268,100 +268,6 @@
       return post ? enrich(post) : null;
     },
 
-    create({ title, content = '', tags = [], image = '', kind = 'Proyecto', layout = 'side', status = 'publicado' }) {
-      const clean = cleanTags(tags);
-      const post = {
-        id: uid(),
-        title: String(title).trim(),
-        kind,
-        layout: layout || 'side',
-        content: String(content).trim(),
-        tags: clean.length ? clean : ['Proyecto'],
-        image: image || '',
-        status: status === 'borrador' ? 'borrador' : 'publicado',
-        date: new Date().toISOString(),
-      };
-      const posts = read();
-      posts.unshift(post);
-      const saved = write(posts) ? enrich(post) : null;
-
-      // Sincronización con la API REST (POST /proyectos)
-      apiRequest('/proyectos', {
-        method: 'POST',
-        headers: { 'Idempotency-Key': post.id },
-        body: JSON.stringify({
-          title: post.title,
-          content: post.content,
-          kind: post.kind,
-          layout: post.layout,
-          tags: post.tags,
-          image: post.image,
-          status: post.status,
-        }),
-      }).then((created) => {
-        if (created && created.id) {
-          const current = read();
-          const idx = current.findIndex((p) => p.id === post.id);
-          if (idx !== -1) {
-            current[idx] = { ...current[idx], id: created.id, date: created.date || current[idx].date };
-            write(current);
-            notifyStoreUpdate();
-          }
-        }
-      });
-
-      return saved;
-    },
-
-    update(id, patch) {
-      const posts = read();
-      const index = posts.findIndex((p) => p.id === id);
-      if (index === -1) return null;
-
-      const allowed = ['title', 'content', 'tags', 'image', 'kind', 'status', 'layout'];
-      const next = { ...posts[index] };
-      allowed.forEach((key) => {
-        if (patch[key] !== undefined) next[key] = patch[key];
-      });
-      next.title = String(next.title).trim();
-      next.content = String(next.content).trim();
-      next.tags = cleanTags(next.tags);
-      next.updatedAt = new Date().toISOString();
-
-      posts[index] = next;
-      const saved = write(posts) ? enrich(next) : null;
-
-      // Sincronización con la API REST (PUT /proyectos/{id_})
-      apiRequest(`/proyectos/${encodeURIComponent(id)}`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          title: next.title,
-          content: next.content,
-          kind: next.kind,
-          layout: next.layout,
-          tags: next.tags,
-          image: next.image,
-          status: next.status,
-        }),
-      });
-
-      return saved;
-    },
-
-    remove(id) {
-      const posts = read();
-      const next = posts.filter((p) => p.id !== id);
-      const removed = next.length !== posts.length && write(next);
-
-      if (removed) {
-        // Sincronización con la API REST (DELETE /proyectos/{id_})
-        apiRequest(`/proyectos/${encodeURIComponent(id)}`, {
-          method: 'DELETE',
-        });
-      }
-      return removed;
-    },
-
     /* -------------------------------------------------------------
      * Telemetría y Métricas (Vistas, Likes y Analítica)
      * ----------------------------------------------------------- */
@@ -467,7 +373,7 @@
       return [...new Set(posts.map((p) => p.category))].sort((a, b) => a.localeCompare(b));
     },
 
-    /* Configuración editable del perfil y barra lateral */
+    /* Configuración del perfil y barra lateral */
     getSiteConfig() {
       try {
         const raw = localStorage.getItem(SITE_KEY);
@@ -487,59 +393,12 @@
       }
     },
 
-    saveSiteConfig(patch) {
-      try {
-        const current = this.getSiteConfig();
-        const next = {
-          profile: { ...current.profile, ...(patch.profile || {}) },
-          technologies:
-            patch.technologies !== undefined
-              ? cleanTags(patch.technologies)
-              : current.technologies,
-          projects:
-            patch.projects !== undefined ? patch.projects : current.projects,
-        };
-        localStorage.setItem(SITE_KEY, JSON.stringify(next));
-
-        // Sincronización con la API REST (PUT /configuracion)
-        apiRequest('/configuracion', {
-          method: 'PUT',
-          body: JSON.stringify({
-            profile: next.profile,
-            technologies: next.technologies,
-            projects: next.projects,
-          }),
-        });
-
-        return next;
-      } catch {
-        return null;
-      }
-    },
-
-    /* Foto de perfil del administrador */
+    /* Foto de perfil */
     getAvatar() {
       try {
         return localStorage.getItem(AVATAR_KEY) || DEFAULT_AVATAR;
       } catch {
         return DEFAULT_AVATAR;
-      }
-    },
-
-    setAvatar(dataUrl) {
-      try {
-        if (!dataUrl) localStorage.removeItem(AVATAR_KEY);
-        else localStorage.setItem(AVATAR_KEY, dataUrl);
-
-        // Sincronización con la API REST (PUT /configuracion)
-        apiRequest('/configuracion', {
-          method: 'PUT',
-          body: JSON.stringify({ avatar: dataUrl || DEFAULT_AVATAR }),
-        });
-
-        return true;
-      } catch {
-        return false;
       }
     },
   };

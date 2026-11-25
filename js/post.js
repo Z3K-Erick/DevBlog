@@ -59,8 +59,6 @@
 
       <div class="post-layout">
         <article class="post-article">
-          ${post.status !== 'publicado' ? '<div class="draft-banner">Borrador — vista previa privada del autor.</div>' : ''}
-
           <header class="post-header">
             <p class="featured-kicker">
               ${esc(kindLabel)} · PUBLICADO EL ${esc(dateLabel)} · ${esc(post.readTime.toUpperCase())}

@@ -298,48 +298,6 @@
   width: 100%;
 }
 
-.sidebar-edit-form {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  width: 100%;
-}
-
-.build-edit-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.build-edit-row {
-  display: grid;
-  grid-template-columns: 54px minmax(0, 1fr) auto;
-  gap: 8px;
-  align-items: start;
-  padding: 10px;
-  border-radius: var(--radius);
-  background: var(--surface-sunken);
-  border: 1px solid var(--border);
-}
-
-.build-icon-input {
-  text-align: center;
-  font-family: var(--font-mono);
-  font-weight: 700;
-}
-
-.build-edit-fields {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.form-grid-2 {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 12px;
-}
-
 .profile-avatar-circle {
   width: 44px;
   height: 44px;
@@ -484,16 +442,6 @@
   justify-content: space-between;
   gap: 44px;
   align-items: start;
-}
-
-.draft-banner {
-  margin-bottom: 18px;
-  padding: 10px 14px;
-  border-radius: var(--radius);
-  background: rgba(245, 158, 11, 0.12);
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  color: #fcd34d;
-  font-size: 0.84rem;
 }
 
 .post-header {
