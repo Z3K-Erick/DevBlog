@@ -4,7 +4,7 @@
 (function () {
   'use strict';
 
-  const { Store, Auth, Utils, Markdown } = window.DevBlog;
+  const { Store, Utils, Markdown } = window.DevBlog;
   const { tagClass, toast } = window.UI;
   const esc = Utils.escapeHtml;
 
@@ -13,8 +13,8 @@
 
   function renderPostPage() {
     const id = new URLSearchParams(window.location.search).get('id');
-    const post = id ? Store.get(id) : Store.published()[0] || Store.all()[0];
-    const canView = post && (post.status === 'publicado' || Auth.isAdmin());
+    const post = id ? Store.get(id) : Store.published()[0];
+    const canView = Boolean(post && post.status === 'publicado');
 
     if (!canView) {
       document.title = 'Post no encontrado — {EG} DevBlog';

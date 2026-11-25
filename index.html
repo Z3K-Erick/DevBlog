@@ -14,7 +14,7 @@
   <!-- ========================================================================
        HEADER PÚBLICO
        - Logo {EG} con inversión de colores cian y blanco al pasar el cursor
-       - Botón invisible al lado de la foto de perfil + avatar circular
+       - Avatar circular con enlace a la sección Sobre mí
        ======================================================================== -->
   <header class="site-header">
     <div class="container header-inner">
@@ -37,13 +37,10 @@
           <input type="search" placeholder="Buscar post, tema..." aria-label="Buscar publicaciones">
         </form>
 
-        <!-- Botón invisible al lado de la foto de perfil para activar el Modal de Login -->
-        <button type="button" class="secret-login-btn" id="secret-login-btn" aria-label="Acceso administrador"></button>
-
-        <!-- Foto de perfil circular (también abre el login / dashboard) -->
-        <button type="button" class="avatar-btn" id="avatar-btn" aria-label="Perfil de autor">
+        <!-- Foto de perfil circular -->
+        <a href="#sobre-mi" class="avatar-btn" id="avatar-btn" aria-label="Sobre el autor">
           <img src="assets/images/avatar.svg" alt="Foto de perfil">
-        </button>
+        </a>
       </div>
     </div>
   </header>

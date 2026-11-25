@@ -1,10 +1,10 @@
 /**
- * DevBlog — Lógica del Feed Principal y Barra Lateral Editable (index.html)
+ * DevBlog — Lógica del Feed Principal y Barra Lateral Pública (index.html)
  */
 (function () {
   'use strict';
 
-  const { Store, Auth, Utils } = window.DevBlog;
+  const { Store, Utils } = window.DevBlog;
   const UI = window.UI;
   const { postCard, tagClass } = UI;
   const esc = Utils.escapeHtml;
@@ -18,9 +18,6 @@
     tag: params.get('tag') || 'todos',
     sort: 'recent',
     visible: PAGE_SIZE,
-    editingSidebar: null, // 'profile' | 'tech' | 'build' | null
-    techEditor: null,
-    buildDraft: null,
   };
 
   const els = {
@@ -103,58 +100,17 @@
   }
 
   /* ---------------------------------------------------------------
-   * Sidebar editable por el Administrador
+   * Barra lateral pública
    * ------------------------------------------------------------- */
-  function renderProfileCard(cfg, isAdmin) {
+  function renderProfileCard(cfg) {
     if (!els.profileCard) return;
     const p = cfg.profile;
-
-    if (isAdmin && state.editingSidebar === 'profile') {
-      els.profileCard.innerHTML = `
-        <form class="sidebar-edit-form" id="form-edit-profile" novalidate>
-          <div class="sidebar-head">
-            <h2 class="sidebar-title">Editar perfil</h2>
-            <span class="status status--editing">Editando</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div class="profile-avatar-circle">
-              <img src="${esc(Store.getAvatar())}" alt="Avatar" data-user-avatar>
-            </div>
-            <label class="btn btn-secondary btn-sm">
-              📷 Cambiar foto
-              <input type="file" id="inline-avatar-file" accept="image/*" class="visually-hidden">
-            </label>
-          </div>
-          <div class="field">
-            <label class="label">Nombre</label>
-            <input class="input select--sm" name="name" value="${esc(p.name)}" required>
-          </div>
-          <div class="field">
-            <label class="label">Descripción</label>
-            <textarea class="input textarea" name="bio" rows="2" style="min-height:64px;">${esc(p.bio)}</textarea>
-          </div>
-          <div class="field">
-            <label class="label">Ubicación</label>
-            <input class="input select--sm" name="location" value="${esc(p.location)}">
-          </div>
-          <div class="field">
-            <label class="label">URL de GitHub</label>
-            <input class="input select--sm" name="githubUrl" value="${esc(p.githubUrl)}">
-          </div>
-          <div class="edit-form-actions">
-            <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
-            <button type="button" class="btn btn-secondary btn-sm" data-cancel-sidebar>Cancelar</button>
-          </div>
-        </form>`;
-      return;
-    }
 
     els.profileCard.innerHTML = `
       <div class="sidebar-card-top">
         <div class="profile-avatar-circle">
           <img src="${esc(Store.getAvatar())}" alt="Foto de perfil de ${esc(p.name)}" data-user-avatar>
         </div>
-        ${isAdmin ? `<button type="button" class="btn btn-secondary btn-sm" data-edit-sidebar="profile">${UI.Icons.edit}<span>Editar</span></button>` : ''}
       </div>
       <div class="profile-info">
         <p class="profile-name">${esc(p.name)}</p>
@@ -173,29 +129,8 @@
       }`;
   }
 
-  function renderTechCard(cfg, isAdmin) {
+  function renderTechCard() {
     if (!els.techCard) return;
-
-    if (isAdmin && state.editingSidebar === 'tech') {
-      els.techCard.innerHTML = `
-        <form class="sidebar-edit-form" id="form-edit-tech" novalidate>
-          <div class="sidebar-head">
-            <h2 class="sidebar-title">Editar tecnologías</h2>
-            <span class="status status--editing">Editando</span>
-          </div>
-          <div id="sidebar-tech-editor"></div>
-          <span class="form-hint">Escribe una tecnología y presiona Enter, o quita con ×</span>
-          <div class="edit-form-actions">
-            <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
-            <button type="button" class="btn btn-secondary btn-sm" data-cancel-sidebar>Cancelar</button>
-          </div>
-        </form>`;
-      state.techEditor = UI.TagInput(
-        document.getElementById('sidebar-tech-editor'),
-        cfg.technologies
-      );
-      return;
-    }
 
     const counts = Store.tagCounts();
     const activeTag = state.tag.toLowerCase();
@@ -203,7 +138,6 @@
     els.techCard.innerHTML = `
       <div class="sidebar-head">
         <h2 class="sidebar-title">Filtrar por tecnología</h2>
-        ${isAdmin ? `<button type="button" class="btn btn-secondary btn-sm" data-edit-sidebar="tech">${UI.Icons.edit}<span>Editar</span></button>` : ''}
       </div>
       <div class="tech-filters">
         ${counts
@@ -215,51 +149,13 @@
       </div>`;
   }
 
-  function renderBuildCard(cfg, isAdmin) {
+  function renderBuildCard(cfg) {
     if (!els.buildCard) return;
-
-    if (isAdmin && state.editingSidebar === 'build') {
-      const items = state.buildDraft || cfg.projects.map((x) => ({ ...x }));
-      state.buildDraft = items;
-
-      els.buildCard.innerHTML = `
-        <form class="sidebar-edit-form" id="form-edit-build" novalidate>
-          <div class="sidebar-head">
-            <h2 class="sidebar-title">Editar En construcción</h2>
-            <span class="status status--editing">Editando</span>
-          </div>
-          <div class="build-edit-list">
-            ${items
-              .map(
-                (item, idx) => `
-              <div class="build-edit-row" data-idx="${idx}">
-                <input class="input select--sm build-icon-input" name="icon-${idx}" value="${esc(item.icon)}" placeholder="</>" aria-label="Icono">
-                <div class="build-edit-fields">
-                  <input class="input select--sm" name="name-${idx}" value="${esc(item.name)}" placeholder="Nombre del proyecto" required>
-                  <input class="input select--sm" name="desc-${idx}" value="${esc(item.desc)}" placeholder="Descripción corta">
-                </div>
-                <button type="button" class="icon-btn" data-remove-build="${idx}" aria-label="Quitar proyecto">${UI.Icons.trash}</button>
-              </div>`
-              )
-              .join('')}
-          </div>
-          <button type="button" class="btn btn-secondary btn-sm" id="add-build-item">+ Agregar proyecto</button>
-          <div class="edit-form-actions">
-            <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
-            <button type="button" class="btn btn-secondary btn-sm" data-cancel-sidebar>Cancelar</button>
-          </div>
-        </form>`;
-      return;
-    }
 
     els.buildCard.innerHTML = `
       <div class="sidebar-head">
         <h2 class="sidebar-title">En construcción</h2>
-        ${
-          isAdmin
-            ? `<button type="button" class="btn btn-secondary btn-sm" data-edit-sidebar="build">${UI.Icons.edit}<span>Editar</span></button>`
-            : '<span class="muted">↗</span>'
-        }
+        <span class="muted">↗</span>
       </div>
       <ul class="build-list">
         ${cfg.projects
@@ -279,26 +175,15 @@
 
   function renderSidebar() {
     const cfg = Store.getSiteConfig();
-    const isAdmin = Auth.isAdmin();
-    renderProfileCard(cfg, isAdmin);
-    renderTechCard(cfg, isAdmin);
-    renderBuildCard(cfg, isAdmin);
+    renderProfileCard(cfg);
+    renderTechCard();
+    renderBuildCard(cfg);
   }
 
   function render() {
     renderTabs();
     renderFeed();
     renderSidebar();
-  }
-
-  function syncBuildDraftFromDOM() {
-    const form = document.getElementById('form-edit-build');
-    if (!form || !state.buildDraft) return;
-    state.buildDraft = state.buildDraft.map((_, idx) => ({
-      icon: form.querySelector(`[name="icon-${idx}"]`)?.value.trim() || '</>',
-      name: form.querySelector(`[name="name-${idx}"]`)?.value.trim() || '',
-      desc: form.querySelector(`[name="desc-${idx}"]`)?.value.trim() || '',
-    }));
   }
 
   document.addEventListener('click', (e) => {
@@ -321,92 +206,12 @@
       return;
     }
 
-    const editBtn = e.target.closest('[data-edit-sidebar]');
-    if (editBtn && Auth.isAdmin()) {
-      state.editingSidebar = editBtn.dataset.editSidebar;
-      state.buildDraft = null;
-      renderSidebar();
-      return;
-    }
-
-    if (e.target.closest('[data-cancel-sidebar]')) {
-      state.editingSidebar = null;
-      state.buildDraft = null;
-      renderSidebar();
-      return;
-    }
-
-    if (e.target.closest('#add-build-item')) {
-      syncBuildDraftFromDOM();
-      state.buildDraft.push({ icon: '</>', name: 'Nuevo proyecto', desc: 'En desarrollo' });
-      renderSidebar();
-      return;
-    }
-
-    const removeBuild = e.target.closest('[data-remove-build]');
-    if (removeBuild) {
-      syncBuildDraftFromDOM();
-      state.buildDraft.splice(Number(removeBuild.dataset.removeBuild), 1);
-      renderSidebar();
-      return;
-    }
-
     if (e.target.closest('[data-reset]')) {
       state.query = '';
       state.kind = 'todos';
       state.tag = 'todos';
       if (els.search) els.search.value = '';
       render();
-    }
-  });
-
-  document.addEventListener('change', async (e) => {
-    if (e.target.id === 'inline-avatar-file') {
-      const file = e.target.files[0];
-      e.target.value = '';
-      if (!file) return;
-      try {
-        const dataUrl = await UI.readImage(file, 400);
-        Store.setAvatar(dataUrl);
-        UI.syncAvatars();
-        UI.toast('Foto de perfil actualizada', 'success');
-      } catch (err) {
-        UI.toast(err.message, 'error');
-      }
-    }
-  });
-
-  document.addEventListener('submit', (e) => {
-    if (e.target.id === 'form-edit-profile') {
-      e.preventDefault();
-      const f = e.target;
-      Store.saveSiteConfig({
-        profile: {
-          name: f.name.value.trim() || 'Erick',
-          bio: f.bio.value.trim(),
-          location: f.location.value.trim(),
-          githubUrl: f.githubUrl.value.trim(),
-        },
-      });
-      state.editingSidebar = null;
-      renderSidebar();
-      UI.toast('Perfil actualizado', 'success');
-    } else if (e.target.id === 'form-edit-tech') {
-      e.preventDefault();
-      const tags = state.techEditor ? state.techEditor.get() : [];
-      Store.saveSiteConfig({ technologies: tags });
-      state.editingSidebar = null;
-      renderSidebar();
-      UI.toast('Tecnologías actualizadas', 'success');
-    } else if (e.target.id === 'form-edit-build') {
-      e.preventDefault();
-      syncBuildDraftFromDOM();
-      const clean = (state.buildDraft || []).filter((x) => x.name);
-      Store.saveSiteConfig({ projects: clean });
-      state.editingSidebar = null;
-      state.buildDraft = null;
-      renderSidebar();
-      UI.toast('Sección En construcción actualizada', 'success');
     }
   });
 

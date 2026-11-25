@@ -1,18 +1,14 @@
 /**
  * DevBlog — Componentes de interfaz compartidos
  * ---------------------------------------------------------------
- * - Header con botón invisible junto a la foto de perfil + avatar
- *   para abrir el modal de Iniciar Sesión.
- * - Modal "Iniciar Sesión" y Modal "¿Eliminar publicación?" idénticos
- *   al maquetado de Figma.
- * - Componente reutilizable PostCard (vista pública y Mi Feed).
+ * - Toasts, modales base y sincronización de avatares en el header.
+ * - Componente reutilizable PostCard para la vista pública.
  */
 (function () {
   'use strict';
 
-  const { Auth, Utils } = window.DevBlog;
+  const { Utils } = window.DevBlog;
   const esc = Utils.escapeHtml;
-  const getCmsUrl = () => window.DEVBLOG_CMS_URL || 'CMS/dashboard.html';
 
   const svg = (paths, size = 16) =>
     `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
@@ -100,70 +96,6 @@
     const open = document.querySelector('.modal-overlay.is-open');
     if (open) dismissModal(open);
   });
-
-  /* ---------------------------------------------------------------
-   * Modal 2 (Figma): Iniciar Sesión
-   * ------------------------------------------------------------- */
-  let loginModal = null;
-
-  function getLoginModal() {
-    if (loginModal) return loginModal;
-
-    loginModal = createModal(
-      'login-modal',
-      `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="login-title">
-        <div class="modal-header">
-          <div>
-            <h2 class="modal-title" id="login-title">Iniciar Sesión</h2>
-            <p class="modal-subtitle">Acceso privado al panel de administración</p>
-          </div>
-          <button type="button" class="icon-btn" data-dismiss aria-label="Cerrar">${Icons.close}</button>
-        </div>
-        <form class="modal-body" id="login-form" autocomplete="off" novalidate>
-          <div class="field">
-            <label class="label" for="login-user">Usuario / Correo</label>
-            <input class="input" id="login-user" name="user" placeholder="Ingresa tu usuario o correo" data-autofocus required>
-          </div>
-          <div class="field">
-            <label class="label" for="login-pass">Contraseña</label>
-            <input class="input" id="login-pass" name="password" type="password" placeholder="••••••••••••" required>
-          </div>
-          <p class="form-error" id="login-error" role="alert" hidden>Usuario o contraseña incorrectos.</p>
-          <button type="submit" class="btn btn-primary btn-block">Ingresar al Dashboard</button>
-        </form>
-      </div>`
-    );
-
-    const form = loginModal.querySelector('#login-form');
-    const error = loginModal.querySelector('#login-error');
-    const card = loginModal.querySelector('.modal');
-
-    form.addEventListener('input', () => (error.hidden = true));
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      if (Auth.login(form.user.value, form.password.value)) {
-        window.location.href = getCmsUrl();
-        return;
-      }
-      error.hidden = false;
-      card.classList.remove('shake');
-      void card.offsetWidth;
-      card.classList.add('shake');
-    });
-
-    return loginModal;
-  }
-
-  function openLogin() {
-    if (Auth.isAdmin()) {
-      window.location.href = getCmsUrl();
-      return;
-    }
-    const modal = getLoginModal();
-    modal.querySelector('#login-form').reset();
-    modal.querySelector('#login-error').hidden = true;
-    openModal(modal);
-  }
 
   /* ---------------------------------------------------------------
    * Modal 1 (Figma): ¿Eliminar publicación?
@@ -426,22 +358,6 @@
   function initHeader() {
     syncAvatars();
 
-    // Botón invisible al lado de la foto de perfil: único acceso al login
-    const secretBtn = document.getElementById('secret-login-btn');
-    if (secretBtn) {
-      secretBtn.addEventListener('click', () => {
-        openLogin();
-      });
-    }
-
-    const avatar = document.getElementById('avatar-btn');
-    if (avatar) {
-      avatar.classList.toggle('is-admin', Auth.isAdmin());
-      avatar.addEventListener('click', () => {
-        if (Auth.isAdmin()) window.location.href = getCmsUrl();
-      });
-    }
-
     const search = document.getElementById('header-search');
     if (search) {
       search.addEventListener('submit', (e) => {
@@ -475,7 +391,6 @@
   window.UI = {
     Icons,
     toast,
-    openLogin,
     confirmDelete,
     postCard,
     statusBadge,

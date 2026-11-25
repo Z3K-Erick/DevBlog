@@ -7,7 +7,6 @@
   const STORAGE_KEY = 'devblog:posts:v4';
   const AVATAR_KEY = 'devblog:avatar:v1';
   const SITE_KEY = 'devblog:siteconfig:v1';
-  const AUTH_KEY = 'devblog:admin:session';
   const DEFAULT_AVATAR = 'assets/images/avatar.svg';
   const API_BASE_URL = window.DEVBLOG_API_URL || 'http://127.0.0.1:8001';
 
@@ -28,13 +27,6 @@
         desc: 'Maquetado + panel de administración',
       },
     ],
-  };
-
-  // Único administrador autorizado (comparación estricta)
-  const ADMIN_ACCOUNT = {
-    email: 'erick@devblog.com',
-    user: 'z3k-erick',
-    passwordHash: 'Erick#DevBlog2026!',
   };
 
   /* ---------------------------------------------------------------
@@ -555,34 +547,8 @@
   // Hidratar desde la API en segundo plano al iniciar la página
   syncFromApi();
 
-  /* ---------------------------------------------------------------
-   * Auth — Validación estricta del único administrador
-   * ------------------------------------------------------------- */
-  const Auth = {
-    login(user, password) {
-      const u = String(user || '').trim().toLowerCase();
-      const p = String(password || '');
-      const validUser = u === ADMIN_ACCOUNT.email || u === ADMIN_ACCOUNT.user;
-      const validPass = p === ADMIN_ACCOUNT.passwordHash;
-      if (validUser && validPass) {
-        localStorage.removeItem('isAdmin'); // limpia llaves antiguas de prueba
-        localStorage.setItem(AUTH_KEY, 'active');
-        return true;
-      }
-      return false;
-    },
-    logout() {
-      localStorage.removeItem('isAdmin');
-      localStorage.removeItem(AUTH_KEY);
-    },
-    isAdmin() {
-      return localStorage.getItem(AUTH_KEY) === 'active';
-    },
-  };
-
   window.DevBlog = {
     Store,
-    Auth,
     Utils: { escapeHtml, normalizeText, slugify, formatDate, readTime, makeExcerpt },
   };
 })();
